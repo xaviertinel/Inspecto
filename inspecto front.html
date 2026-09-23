@@ -1279,12 +1279,15 @@ function VisitPlayback({ audit: a }) {
   const curSec = [...sections].reverse().find(x => x.t <= cur);
   const secLabel = (x) => x[lang] || x.fr;
   async function genSections() { setSecBusy(true); try { const r = await ai.json(prompts.sections(lines), { modelTier: "quick" }); st.updateAudit(a.id, x => ({ ...x, sections: r.sections })); } catch (e) { st.toast(aiErr(e)); } setSecBusy(false); }
-  const PlanEl = a.plan ? <PlanImageView plan={a.plan} sections={sections} secName={secLabel} cur={cur} onSeek={jump} /> : <PlanView v={{ trace, photos }} cur={cur} range={[0, total]} onSeek={jump} />;
+  const trRef = useRef(null);
+  const planSeek = (t) => { jump(t); if (!wide) setTab("transcript"); };
+  useEffect(() => { const el = trRef.current?.querySelector(".tr-line.cur"); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); }, [seek, tab]);
+  const PlanEl = a.plan ? <PlanImageView plan={a.plan} sections={sections} secName={secLabel} cur={cur} onSeek={planSeek} /> : <PlanView v={{ trace, photos }} cur={cur} range={[0, total]} onSeek={planSeek} />;
   const Chapters = <div className="no-print" style={{ marginBottom: 14 }}>
     {sections.length ? <div className="row wrap" style={{ gap: 6 }}>{sections.map((x, i) => { const on = curSec === x; return <button key={i} className="tag" style={{ height: 30, cursor: "pointer", background: on ? "var(--text)" : "var(--surface)", color: on ? "var(--bg)" : "var(--text)", borderColor: on ? "var(--text)" : "var(--border)" }} onClick={() => setCur(x.t)}><span className="mono" style={{ fontSize: 10, opacity: .7 }}>{String(i + 1).padStart(2, "0")}</span>{secLabel(x)}<span className="mono" style={{ fontSize: 10, opacity: .6 }}>{fmt(x.t)}</span></button>; })}</div>
       : <button className="btn btn-sm" disabled={secBusy} onClick={genSections}>{secBusy ? <><span className="spinner" />Découpage…</> : <><Icon n="sparkle" s={14} />Générer les chapitres de la visite</>}</button>}
   </div>;
-  const Transcript = <div className="card card-pad" style={{ maxHeight: wide ? 520 : "none", overflow: "auto" }}>
+  const Transcript = <div ref={trRef} className="card card-pad" style={{ maxHeight: wide ? 520 : "none", overflow: "auto" }}>
     {lines.map((l, i) => { const ph = photos.filter(p => p.t > (lines[i - 1]?.t ?? -1) && p.t <= l.t);
       const secs = sections.filter(x => x.t <= l.t && x.t > (lines[i - 1]?.t ?? -1));
       return <React.Fragment key={i}>
@@ -2159,8 +2162,12 @@ ${v.photos.length ? `<h2>Photos</h2>${v.photos.map(p => `<img src="${p.src}" alt
           {!sec && <button className="icon-btn tr-add" title="Ajouter un chapitre à partir de cette phrase" onClick={e => { e.stopPropagation(); addSection(l.t); }}><Icon n="plus" s={14} /></button>}</div></React.Fragment>; })}
     {!lines.length && <div className="empty">Pas encore de transcription.</div>}
   </div>;
-  const Plan = v.plan ? <PlanImageView plan={v.plan} sections={secs} secName={secName} cur={cur} onSeek={jump} editable selected={selSec} onSelect={setSelSec} onPlace={placeSec} onRename={renameSec} />
-    : <PlanView v={v} cur={cur} range={range} onSeek={jump} />;
+  const trRef = useRef(null);
+  const planSeek = (t) => { jump(t); if (!wide) setTab("transcript"); };
+  useEffect(() => { const el = trRef.current?.querySelector(".tr-line.cur"); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); }, [seek, tab]);
+  useEffect(() => { if (!playing) return; trRef.current?.querySelector(".tr-line.cur")?.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, [curLine]);
+  const Plan = v.plan ? <PlanImageView plan={v.plan} sections={secs} secName={secName} cur={cur} onSeek={planSeek} editable selected={selSec} onSelect={setSelSec} onPlace={placeSec} onRename={renameSec} />
+    : <PlanView v={v} cur={cur} range={range} onSeek={planSeek} />;
   const A = v.analysis;
   const Report = <div>
     {!A ? <div className="card card-pad">
@@ -2187,7 +2194,7 @@ ${v.photos.length ? `<h2>Photos</h2>${v.photos.map(p => `<img src="${p.src}" alt
       {Player}
       <div style={{ display: "grid", gridTemplateColumns: wide ? "minmax(0,1.2fr) minmax(0,1fr)" : "1fr", gap: 16, alignItems: "start" }}>
         <div><div className="seg" style={{ marginBottom: 14 }}>{[["report", "Rapport"], ["transcript", "Transcription"], ...(wide ? [] : [["plan", "Plan et parcours"]])].map(([k, l]) => <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}</div>
-          {tab === "report" ? Report : tab === "transcript" ? <div className="card card-pad" style={wide ? { maxHeight: "calc(100vh - 250px)", overflow: "auto" } : null}>{Transcript}</div> : Plan}</div>
+          {tab === "report" ? Report : tab === "transcript" ? <div ref={trRef} className="card card-pad" style={wide ? { maxHeight: "calc(100vh - 250px)", overflow: "auto" } : null}>{Transcript}</div> : Plan}</div>
         {wide && <div style={{ position: "sticky", top: 0, alignSelf: "start", maxHeight: "calc(100vh - 120px)", overflow: "auto" }}>{Plan}</div>}
       </div></div></div>
     {busy && <div style={{ position: "fixed", inset: 0, background: "var(--bg)", zIndex: 80, display: "grid", placeItems: "center", padding: 24 }}><div style={{ width: "100%", maxWidth: 380 }}>
