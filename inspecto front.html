@@ -1375,7 +1375,7 @@ function ChatDrawer({ audit, onClose }) {
    APP DE VISITE · mobile d'abord, hors ligne (IndexedDB)
    Écrans : accueil → formulaire → consentement RGPD → capture → synthèse
    ========================================================================= */
-const LANGS = { auto: "Détection auto", fr: "Français", en: "Anglais", es: "Espagnol", ar: "Arabe" };
+const LANGS = { fr: "Français", en: "Anglais", es: "Espagnol", ar: "Arabe" };
 const serverInfo = location.protocol.startsWith("http") && !window.claude ? fetch("/api/info").then(r => r.json()).catch(() => ({})) : Promise.resolve({});
 function newVisit(p) {
   return { id: uid(), code: shareCode(), name: "", site: "", date: today(), place: "", gps: null, lang: "fr", type: "qualif-indus", sector: "Usine", team: [], consent: null,
@@ -1637,7 +1637,7 @@ function Capture({ v, save, onBack, onSynth }) {
   const vRef = useRef(v); vRef.current = v; const covAt = useRef(0); const recId = useRef(null);
   const elapsed = elapsedOf(segs) + (0 * tick);
   const baseT = v.recordings.reduce((s, r) => s + r.duration, 0);
-  const lastLine = partial || v.lines.at(-1)?.text || "";
+  const lastLine = partial || (state !== "idle" ? v.lines.filter(l => l.rec === recId.current).at(-1)?.text : v.lines.at(-1)?.text) || "";
   const followActs = v.followup ? (st.audits.find(a => a.id === v.followup)?.actions || []).filter(a => a.status !== "fait") : [];
 
   useEffect(() => { if (state !== "rec") return; const i = setInterval(() => setTick(x => x + 1), 500); return () => clearInterval(i); }, [state]);
@@ -1667,7 +1667,7 @@ function Capture({ v, save, onBack, onSynth }) {
       media.current = { stream, ctx, analyser: an, mr, chunks };
     } catch (e) { media.current = {}; }
   }
-  // Transcription en direct côté serveur : un second enregistreur découpe l'audio en tranches autonomes de 15 s.
+  // Transcription serveur (Voxtral) : conservée mais désactivée, la reconnaissance du navigateur suffit pour la démo.
   const [liveTx, setLiveTx] = useState(0);
   async function startChunker(stream) {
     const info = await serverInfo; if (!info.transcribe) return;
@@ -1701,12 +1701,8 @@ function Capture({ v, save, onBack, onSynth }) {
     if (state === "idle") {
       recId.current = uid(); await startMedia();
       setSegs([{ start: Date.now() }]); setState("rec");
-      // Reconnaissance du navigateur en premier ; la transcription serveur (Voxtral) ne prend le relais qu'en secours
-      // (micro refusé par la reconnaissance, navigateur incompatible) ou en détection automatique de langue.
-      const info = await serverInfo; let serverTx = false;
-      const useServer = () => { if (serverTx || !info.transcribe || !media.current.stream || media.current.usedChunker) return; serverTx = true; startChunker(media.current.stream); };
-      speech.current = createSpeech(v.lang === "auto" ? "fr" : v.lang, (text, lg) => { setPartial(""); if (serverTx) return; const tt = baseT + elapsedOf(segsRef.current); save(x => ({ ...x, lines: [...x.lines, { t: tt, text, lang: lg, rec: recId.current }] })); }, setPartial, (m) => { setMode(m); if (m === "denied" || m === "unsupported" || m === "network") useServer(); });
-      if (v.lang === "auto") useServer();
+      // Transcription : reconnaissance vocale du navigateur uniquement, immédiate, sans appel serveur ni IA.
+      speech.current = createSpeech(v.lang === "auto" ? "fr" : v.lang, (text, lg) => { setPartial(""); const tt = baseT + elapsedOf(segsRef.current); save(x => ({ ...x, lines: [...x.lines, { t: tt, text, lang: lg, rec: recId.current }] })); }, setPartial, setMode);
       speech.current.start();
       if (!gpsOn) setGpsOn(true);
     } else if (state === "rec") pause(); else resume();
@@ -1720,7 +1716,7 @@ function Capture({ v, save, onBack, onSynth }) {
     const rec = { id: recId.current, name: "Enregistrement " + (v.recordings.length + 1), segments: fin, duration: elapsedOf(fin), offset: baseT, at: fin[0].start, audio: blob };
     save(x => ({ ...x, recordings: [...x.recordings, rec] })); setSegs([]); setState("idle"); setPartial(""); st.toast("Enregistrement sauvegardé");
     const info = await serverInfo; const liveLines = vRef.current.lines.filter(l => l.rec === rec.id).length;
-    if (blob && info.transcribe && !media.current.usedChunker && (v.lang === "auto" || mode !== "live" || !liveLines)) {
+    if (false && blob && info.transcribe && !media.current.usedChunker && (v.lang === "auto" || mode !== "live" || !liveLines)) {
       setTranscribing(true);
       try {
         const r = await fetch("/api/transcribe?lang=" + encodeURIComponent(v.lang), { method: "POST", headers: { "content-type": blob.type || "audio/webm" }, body: blob });
@@ -1902,12 +1898,7 @@ function Capture({ v, save, onBack, onSynth }) {
         {state !== "idle" && mode === "unsupported" && <div className="card card-pad" style={{ fontSize: 13, marginTop: 10, maxWidth: 420, boxShadow: "inset 3px 0 0 var(--bp-red)" }}><b>Reconnaissance vocale indisponible dans ce navigateur.</b> Utilisez Edge ou Chrome, ou dictez vos notes ci-dessous avec le clavier.</div>}
         {state !== "idle" && mode === "network" && <div className="faint" style={{ fontSize: 12, marginTop: 8 }}>Service de reconnaissance vocale injoignable (réseau). Nouvel essai automatique…</div>}
         {state !== "idle" && <div className="row" style={{ marginTop: 14 }}><button className="btn" onClick={state === "rec" ? pause : resume}><Icon n={state === "rec" ? "pause" : "play"} s={16} />{state === "rec" ? "Pause" : "Reprendre"}</button><button className="btn btn-dark" onClick={stopRec}><Icon n="stop" s={14} />Terminer l'enregistrement</button></div>}
-        {(() => { const cur = v.lines.filter(l => l.rec === recId.current); const show = state !== "idle" || cur.length; if (!show) return <div className="live-line" />; return <div className="card" style={{ width: "100%", maxWidth: 560, marginTop: 12, textAlign: "left", maxHeight: 200, overflow: "auto", padding: "8px 12px" }}>
-          <div className="row" style={{ marginBottom: 4 }}><span className="eyebrow">Transcription en direct</span>{liveTx > 0 && <span className="spinner" style={{ width: 11, height: 11 }} />}<div className="spacer" /><span className="mono faint" style={{ fontSize: 11 }}>{cur.length} phrase{cur.length > 1 ? "s" : ""}</span></div>
-          {cur.slice(-12).map((l, i) => <div key={i} className="row" style={{ fontSize: 14, gap: 8, alignItems: "flex-start", padding: "2px 0" }}><span className="mono faint" style={{ fontSize: 11, marginTop: 3 }}>{fmt(l.t)}</span><span dir={l.lang === "ar" ? "rtl" : undefined} style={{ flex: 1, textAlign: l.lang === "ar" ? "right" : "left" }}>{l.text}</span>{l.lang && l.lang !== (v.lang === "auto" ? "fr" : v.lang) && <span className="tag" style={{ fontSize: 10 }}>{l.lang.toUpperCase()}</span>}</div>)}
-          {partial && <div className="faint" style={{ fontSize: 14, fontStyle: "italic", padding: "2px 0 2px 44px" }}>{partial}…</div>}
-          {!cur.length && !partial && <div className="faint" style={{ fontSize: 13 }}>{state === "rec" ? "Parlez : le texte apparaît ici (tranches de quelques secondes)." : "En pause."}</div>}
-        </div>; })()}
+        <div className="live-line" dir={(v.lang === "ar") ? "rtl" : undefined}>{lastLine && <>« {lastLine} »</>}</div>
         <form className="row" style={{ width: "100%", maxWidth: 480, marginTop: 6 }} onSubmit={e => { e.preventDefault(); const f = e.currentTarget.querySelector("input"); const text = f.value.trim(); if (!text) return; const tt = baseT + elapsedOf(segsRef.current); save(x => ({ ...x, lines: [...x.lines, { t: tt, text, lang: v.lang === "auto" ? "fr" : v.lang, rec: recId.current || "note", manual: true }] })); f.value = ""; }}>
           <input className="input" placeholder="Note écrite ou dictée au clavier (ajoutée à la transcription)" style={{ flex: 1 }} /><button className="btn" type="submit"><Icon n="plus" s={16} /></button></form>
         <div className="v-tools">
