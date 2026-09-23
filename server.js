@@ -103,6 +103,13 @@ http.createServer(async (req, res) => {
       return json(res, 200, await transcribe(await readBody(req), req.headers["content-type"], q.get("lang")));
     }
     if (req.method === "GET" && req.url === "/api/info") return json(res, 200, { provider: PROVIDER, transcribe: PROVIDER === "mistral" });
+    if (req.method === "GET" && req.url.startsWith("/demo/")) {
+      const f = path.join(__dirname, "demo", path.basename(decodeURIComponent(req.url.slice(6).split("?")[0])));
+      if (!fs.existsSync(f)) return json(res, 404, { error: "not found" });
+      const types = { ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".txt": "text/plain; charset=utf-8", ".pdf": "application/pdf", ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document" };
+      res.writeHead(200, { "Content-Type": types[path.extname(f).toLowerCase()] || "application/octet-stream" });
+      return fs.createReadStream(f).pipe(res);
+    }
     if (req.method === "GET" && (req.url === "/" || req.url.startsWith("/?") || req.url.startsWith("/#"))) {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       return fs.createReadStream(HTML).pipe(res);

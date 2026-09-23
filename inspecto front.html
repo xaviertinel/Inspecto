@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Inspecto · Visites et audits d'usine</title>
+<title>Inspecto · Visites</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -320,6 +320,7 @@ const AUDIT_TYPES = {
 Object.values(AUDIT_TYPES).forEach(t => { t.items = t.items.map((it, i) => ({ id: "c" + i, domain: it[0], code: it[1], label: it[2] })); });
 
 const SECTOR_TYPE = { "Industrie": "qualif-indus", "Électronique": "qualif-indus", "Textile": "smeta", "Agroalimentaire": "mdd-agro", "Chimie": "esg" };
+const SECTORS = ["Entrepôt", "Boutique", "Usine", "Atelier", "Public"];
 const CLIENT_ORG = "Maison Valcourt";
 const USERS = {
   consultant: { name: "Xavier Tinel", org: "BearingPoint", initials: "XT", role: "consultant", roleLabel: "Consultant" },
@@ -710,7 +711,7 @@ function Login({ onLogin }) {
     <div className="login-art">
       <img src={LOGOS.lw} alt="BearingPoint" style={{ height: 24, width: "auto", alignSelf: "flex-start" }} />
       <div>
-        <div className="eyebrow" style={{ color: "rgba(255,255,255,.7)" }}>Inspecto · Visites et audits d'usine</div>
+        <div className="eyebrow" style={{ color: "rgba(255,255,255,.7)" }}>Inspecto · Visites</div>
         <div style={{ width: 56, height: 4, background: "var(--bp-red)", margin: "14px 0 20px" }} />
         <div style={{ fontSize: "clamp(30px,4vw,52px)", fontWeight: 800, letterSpacing: "-.02em", lineHeight: 1.05, maxWidth: 520 }}>Chaque conversation terrain devient un constat exploitable.</div>
       </div>
@@ -757,7 +758,7 @@ function Shell({ route, go, children }) {
       <div className="side-head">
         <Logo collapsed={collapsed} />
         <div className="brand-mark">{collapsed ? "I" : "INSPECTO"}</div>
-        {!collapsed && <div className="faint" style={{ fontSize: 12, marginTop: 4 }}>Visites et audits d'usine</div>}
+        {!collapsed && <div className="faint" style={{ fontSize: 12, marginTop: 4 }}>Visites</div>}
       </div>
       <nav className="side-nav">
         {items.map(([k, ic, l, c, p]) => <button key={k} className={"nav-item" + (active === k ? " on" : "")} onClick={() => go(p)} title={l}><Icon n={ic} /><span className="lbl">{l}</span>{c != null && <span className="cnt">{c}</span>}</button>)}
@@ -789,14 +790,14 @@ function Library({ go }) {
   const list = st.audits.filter(st.visible).filter(a => (src === "all" || a.source === src) && (!sector || a.sector === sector) && (!status || a.status === status) &&
     (!q || [a.site, a.city, a.country, a.sector, a.ref, ...a.findings.map(f => f.title + " " + f.obs)].join(" ").toLowerCase().includes(q.toLowerCase())))
     .sort((a, b) => b.date.localeCompare(a.date));
-  const sectors = [...new Set(st.audits.map(a => a.sector))];
+  const sectors = [...new Set([...SECTORS, ...st.audits.map(a => a.sector)])];
   const toValidate = st.audits.filter(a => st.visible(a) && a.status === "À valider").length;
   return <div className="page">
     <div className="page-head">
       <div style={{ flex: 1, minWidth: 260 }}><Eyebrow rule>{st.user.role === "client" ? CLIENT_ORG : "Espace audits"}</Eyebrow><h1 className="h1">Bibliothèque</h1><p className="muted" style={{ margin: "6px 0 0" }}>Audits de vos sites, bibliothèque collaborative entre clients et bases publiques.</p></div>
       {st.user.role === "consultant" && <button className="btn btn-red" onClick={() => go("/visit")}><Icon n="plus" />Nouvel audit</button>}
     </div>
-    {toValidate > 0 && st.user.role === "consultant" && <div className="card card-pad row wrap" style={{ marginBottom: 16, boxShadow: "inset 3px 0 0 var(--bp-red)" }}><Icon n="list" /><div style={{ flex: 1 }}><b>{toValidate} audit{toValidate > 1 ? "s" : ""} en attente de validation humaine.</b> <span className="muted">Les constats proposés par l'IA doivent être acceptés, modifiés ou rejetés avant publication.</span></div></div>}
+    {toValidate > 0 && st.user.role === "consultant" && <button className="card card-pad row wrap" style={{ marginBottom: 16, boxShadow: "inset 3px 0 0 var(--bp-red)", width: "100%", textAlign: "left", cursor: "pointer" }} onClick={() => { const l = st.audits.filter(a => st.visible(a) && a.status === "À valider"); if (l.length === 1) go("/audit/" + l[0].id); else setStatus(status === "À valider" ? "" : "À valider"); }}><Icon n="list" /><div style={{ flex: 1 }}><b>{toValidate} audit{toValidate > 1 ? "s" : ""} en attente de validation.</b> <span className="muted">Les constats proposés par l'IA doivent être acceptés, modifiés ou rejetés avant publication.</span></div><Icon n="chevron" s={16} /></button>}
     <div className="row wrap" style={{ marginBottom: 14 }}>
       <div style={{ position: "relative", flex: "1 1 280px" }}><Icon n="search" s={16} style={{ position: "absolute", left: 12, top: 12, color: "var(--text-3)" }} /><input className="input" style={{ paddingLeft: 36 }} placeholder="Site, ville, secteur, constat…" value={q} onChange={e => setQ(e.target.value)} /></div>
       <select className="input" style={{ width: 170 }} value={sector} onChange={e => setSector(e.target.value)}><option value="">Tous secteurs</option>{sectors.map(s => <option key={s}>{s}</option>)}</select>
@@ -1062,7 +1063,22 @@ function VisitPlayback({ audit: a }) {
   const total = Math.max(lines.at(-1)?.t + 45 || 60, 60);
   const trace = useMemo(() => (a.trace?.length ? a.trace : synthTrace(a)), [a.id]);
   const tr = lang === base ? null : (a.translations || {})[lang];
-  useEffect(() => { if (!playing) return; const i = setInterval(() => setCur(c => { if (c + 1 >= total) { setPlaying(false); return total; } return c + 1; }), 1000); return () => clearInterval(i); }, [playing, total]);
+  const audioRef = useRef(null); const urls = useRef({}); const [seek, setSeek] = useState(0);
+  const jump = (t) => { setCur(t); setSeek(s => s + 1); };
+  const recAt = (t) => (a.recordings || []).find(r => r.audio && t >= r.offset && t < r.offset + r.duration);
+  useEffect(() => {
+    const au = audioRef.current; if (!playing) { au?.pause(); return; }
+    const r = recAt(cur);
+    if (r && au) {
+      if (!urls.current[r.id]) urls.current[r.id] = URL.createObjectURL(r.audio);
+      if (au.dataset.rec !== r.id) { au.src = urls.current[r.id]; au.dataset.rec = r.id; }
+      const want = cur - r.offset; if (Math.abs(au.currentTime - want) > 1.5) au.currentTime = want;
+      au.play().catch(() => {}); return;
+    }
+    au?.pause();
+    const i = setInterval(() => setCur(c => { if (c + 1 >= total) { setPlaying(false); return total; } const n = c + 1; if (recAt(n)) setSeek(s => s + 1); return n; }), 1000); return () => clearInterval(i);
+  }, [playing, total, seek]);
+  useEffect(() => () => Object.values(urls.current).forEach(u => URL.revokeObjectURL(u)), []);
   useEffect(() => {
     if (lang === base || tr || !lines.length) return; setBusy(true);
     ai.json(prompts.translate(lines, lang), { modelTier: "quick" })
@@ -1086,7 +1102,7 @@ function VisitPlayback({ audit: a }) {
         {secs.map(x => <button key={x.t} onClick={() => setCur(x.t)} style={{ display: "flex", alignItems: "baseline", gap: 10, width: "100%", border: 0, background: "none", textAlign: "left", padding: i ? "18px 8px 6px" : "4px 8px 6px", borderTop: i ? "1px solid var(--border-soft)" : 0, marginTop: i ? 8 : 0 }}>
           <span className="mono" style={{ fontSize: 11, color: "var(--bp-red)" }}>{String(sections.indexOf(x) + 1).padStart(2, "0")}</span><span className="h3">{secLabel(x)}</span><span className="mono faint" style={{ fontSize: 11 }}>{fmt(x.t)}</span></button>)}
         {ph.map(p => <img key={p.id} src={p.src} style={{ width: 140, height: 94, objectFit: "cover", margin: "6px 8px 6px 54px", display: "block" }} />)}
-        <div className={"tr-line" + (curLine === l ? " cur" : "")} onClick={() => setCur(l.t)}><span className="tc">{fmt(l.t)}</span><span>{tr ? (tr[i] || l.text) : l.text}</span></div>
+        <div className={"tr-line" + (curLine === l ? " cur" : "")} onClick={() => jump(l.t)}><span className="tc">{fmt(l.t)}</span><span>{tr ? (tr[i] || l.text) : l.text}</span></div>
       </React.Fragment>; })}
     {photos.filter(p => p.t > (lines.at(-1)?.t ?? 0)).map(p => <img key={p.id} src={p.src} style={{ width: 140, height: 94, objectFit: "cover", margin: "6px 8px 6px 54px", display: "block" }} />)}
   </div>;
@@ -1101,7 +1117,8 @@ function VisitPlayback({ audit: a }) {
         <div className="seg">{["fr", "en", "es"].map(k => <button key={k} className={lang === k ? "on" : ""} style={lang === k ? { background: "var(--bp-red)", color: "#fff" } : null} onClick={() => setLang(k)}>{k.toUpperCase()}</button>)}</div>
         {busy && <span className="spinner" />}
       </div>
-      <div className="tl" style={{ marginTop: 10 }} onClick={e => { const r = e.currentTarget.getBoundingClientRect(); setCur((e.clientX - r.left) / r.width * total); }}>
+      <audio ref={audioRef} hidden onTimeUpdate={e => { const r = (a.recordings || []).find(x => x.id === e.target.dataset.rec); if (r && playing) setCur(r.offset + e.target.currentTime); }} onEnded={() => { const r = (a.recordings || []).find(x => x.id === audioRef.current?.dataset.rec); if (r) jump(r.offset + r.duration + .01); }} />
+      <div className="tl" style={{ marginTop: 10 }} onClick={e => { const r = e.currentTarget.getBoundingClientRect(); jump((e.clientX - r.left) / r.width * total); }}>
         <div className="track" /><div className="prog" style={{ width: cur / total * 100 + "%" }} />
         {photos.map(p => <div key={p.id} className="mk" title={p.name} style={{ left: p.t / total * 100 + "%" }} />)}
       </div>
@@ -1179,7 +1196,7 @@ function ChatDrawer({ audit, onClose }) {
 const LANGS = { auto: "Détection auto", fr: "Français", en: "Anglais", es: "Espagnol" };
 const serverInfo = fetch("/api/info").then(r => r.json()).catch(() => ({}));
 function newVisit(p) {
-  return { id: uid(), code: shareCode(), name: "", site: "", date: today(), place: "", gps: null, lang: "fr", type: "qualif-indus", team: [], consent: null,
+  return { id: uid(), code: shareCode(), name: "", site: "", date: today(), place: "", gps: null, lang: "fr", type: "qualif-indus", sector: "Usine", team: [], consent: null,
     recordings: [], lines: [], photos: [], trace: [], checklist: {}, followup: null, translations: {}, sections: null, analysis: null, pendingAnalysis: false, auditId: null, createdAt: Date.now(), ...p };
 }
 function elapsedOf(segs, now = Date.now()) { return segs.reduce((s, g) => s + ((g.end || now) - g.start), 0) / 1000; }
@@ -1278,6 +1295,7 @@ function VisitForm({ onBack, onCreate }) {
       {pre && <div className="card card-pad" style={{ fontSize: 14, boxShadow: "inset 3px 0 0 var(--bp-red)" }}>Les {pre.actions.filter(a => a.status !== "fait").length} actions encore ouvertes de l'audit {pre.ref} seront ajoutées à la grille de visite pour vérification.</div>}
       <div className="field"><label>Nom de la visite</label><input className="input" value={v.name} onChange={s("name")} placeholder="Ex. Qualification Metalúrgica Norte" /></div>
       <div className="row"><div className="field" style={{ flex: 1 }}><label>Site audité</label><input className="input" value={v.site} onChange={s("site")} placeholder="Nom du fournisseur" /></div><div className="field" style={{ width: 170 }}><label>Date</label><input className="input" type="date" value={v.date} onChange={s("date")} /></div></div>
+      <div className="field"><label>Secteur</label><div className="seg" style={{ alignSelf: "flex-start", flexWrap: "wrap" }}>{SECTORS.map(k => <button key={k} className={v.sector === k ? "on" : ""} onClick={() => setV({ ...v, sector: k })}>{k}</button>)}</div></div>
       <div className="field"><label>Type d'audit et grille</label><select className="input" value={v.type} onChange={s("type")}>{types.map(([k, t]) => <option key={k} value={k}>{t.label}</option>)}</select>
         <div className="faint" style={{ fontSize: 12 }}>{AUDIT_TYPES[v.type].items.length} points · {AUDIT_TYPES[v.type].refs.join(" · ")}</div>
         <button className="btn btn-ghost btn-sm" style={{ alignSelf: "flex-start", paddingLeft: 0 }} onClick={() => setGenOpen(true)}><Icon n="sparkle" s={14} />Créer une grille pour un autre type d'audit</button></div>
@@ -1473,11 +1491,11 @@ function Capture({ v, save, onBack, onSynth }) {
       <div className="seg">{[["grid", "Grille " + covered + "/" + t.items.length], ["log", "Journal"]].map(([k, l]) => <button key={k} className={aside === k ? "on" : ""} onClick={() => setAside(k)}>{l}</button>)}</div>
       <div className="spacer" />{asideMobile && <button className="icon-btn" onClick={() => setAsideMobile(false)}><Icon n="x" /></button>}</div>
     {aside === "grid" ? <div>
+      <div className="faint" style={{ fontSize: 12, padding: "12px 16px 4px" }}>Case rouge : abordé selon l'IA, d'après la transcription. Case noire : coché par vous. Les domaines à 0 sont signalés avant de quitter le site.</div>
       {followActs.length > 0 && <><div className="eyebrow" style={{ padding: "14px 16px 6px" }}>Actions à vérifier</div>{followActs.map(a => { const k = "act:" + a.id; return <div key={k} className="chk-item" onClick={() => toggleCheck(k)}><div className={"chk-box" + (v.checklist[k] ? " on" : "")}>{v.checklist[k] && <Icon n="check" s={12} w={3} />}</div><div><span className="mono faint" style={{ fontSize: 11 }}>{a.id}</span><div>{a.label}</div></div></div>; })}</>}
       {byDomain.map(({ d, items }) => { const n = items.filter(i => v.checklist[i.id]).length; return <div key={d}>
         <div className="row between" style={{ padding: "14px 16px 6px" }}><span className="eyebrow">{d}</span><span className="mono" style={{ fontSize: 11, color: n === 0 ? "var(--bp-red)" : "var(--text-3)" }}>{n}/{items.length}</span></div>
         {items.map(i => <div key={i.id} className="chk-item" onClick={() => toggleCheck(i.id)}><div className={"chk-box" + (v.checklist[i.id] === "ai" ? " ai" : v.checklist[i.id] ? " on" : "")}>{v.checklist[i.id] && <Icon n="check" s={12} w={3} />}</div><div><span className="mono faint" style={{ fontSize: 11 }}>{i.code}</span><div>{i.label}</div></div></div>)}</div>; })}
-      <div className="faint" style={{ fontSize: 12, padding: 16 }}>Case rouge : abordé selon l'IA, d'après la transcription. Case noire : coché par vous. Les domaines à 0 sont signalés avant de quitter le site.</div>
     </div> : <div style={{ padding: 12 }} className="grid">
       {[...v.photos.map(p => ({ k: "p" + p.id, at: p.at, el: <div className="row" style={{ gap: 10 }}><img src={p.src} style={{ width: 56, height: 56, objectFit: "cover" }} /><div><div style={{ fontSize: 14, fontWeight: 600 }}>{p.name}</div><div className="mono faint" style={{ fontSize: 11 }}>{fmt(p.t)}</div></div></div> })),
         ...v.recordings.map(r => ({ k: "r" + r.id, at: r.at, el: <div className="row" style={{ gap: 10 }}><div style={{ width: 56, height: 56, display: "grid", placeItems: "center", background: "var(--surface-3)" }}><Icon n="mic" /></div><div><div style={{ fontSize: 14, fontWeight: 600 }}>{r.name}</div><div className="mono faint" style={{ fontSize: 11 }}>{fmt(r.duration)}</div></div></div> }))]
@@ -1582,8 +1600,36 @@ function Synthesis({ v, save, onBack, go }) {
   const tr = lang === vLang ? null : v.translations[lang];
   const txt = (l) => { if (!tr) return l.text; const i = v.lines.indexOf(l); return tr[i] || l.text; };
 
-  useEffect(() => { if (!playing) return; const i = setInterval(() => setCur(c => { if (c + 1 >= range[1]) { setPlaying(false); return range[1]; } return c + 1; }), 1000); return () => clearInterval(i); }, [playing, sel]);
-  useEffect(() => { setCur(range[0]); }, [sel]);
+  const audioRef = useRef(null); const urls = useRef({}); const [seek, setSeek] = useState(0);
+  const jump = (t) => { setCur(t); setSeek(s => s + 1); };
+  const recAt = (t) => v.recordings.find(r => r.audio && t >= r.offset && t < r.offset + r.duration);
+  useEffect(() => {
+    const a = audioRef.current; if (!playing) { a?.pause(); return; }
+    const r = recAt(cur);
+    if (r && a) {
+      if (!urls.current[r.id]) urls.current[r.id] = URL.createObjectURL(r.audio);
+      if (a.dataset.rec !== r.id) { a.src = urls.current[r.id]; a.dataset.rec = r.id; }
+      const want = cur - r.offset; if (Math.abs(a.currentTime - want) > 1.5) a.currentTime = want;
+      a.play().catch(() => {}); return;
+    }
+    a?.pause();
+    const i = setInterval(() => setCur(c => { if (c + 1 >= range[1]) { setPlaying(false); return range[1]; } const n = c + 1; if (recAt(n)) setSeek(s => s + 1); return n; }), 1000); return () => clearInterval(i);
+  }, [playing, sel, seek]);
+  useEffect(() => () => Object.values(urls.current).forEach(u => URL.revokeObjectURL(u)), []);
+  useEffect(() => { jump(range[0]); }, [sel]);
+  function downloadReport() {
+    const A = v.analysis; const esc = (s) => String(s ?? "").replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+    const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Synthèse · ${esc(v.name)}</title><style>body{font-family:Segoe UI,Arial,sans-serif;max-width:900px;margin:32px auto;padding:0 20px;color:#111}h1{color:#c8102e}h2{border-bottom:2px solid #c8102e;padding-bottom:4px;margin-top:32px}.f{border-left:4px solid #999;padding:8px 12px;margin:10px 0;background:#f6f6f6}.critique{border-color:#c8102e}.majeur{border-color:#e67e22}.mineur{border-color:#f1c40f}.positif{border-color:#27ae60}.sev{font-size:12px;text-transform:uppercase;font-weight:700}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ddd;padding:6px;text-align:left;font-size:14px}.tc{color:#888;font-family:monospace;font-size:12px;margin-right:8px}img{max-width:220px;margin:4px}small{color:#666}</style></head><body>
+<h1>Inspecto · Synthèse de visite</h1><p><b>${esc(v.name)}</b><br>${esc(v.site)} · ${esc(v.place)} · ${esc(frDate(v.date))} · ${esc(t.label)} · Secteur ${esc(v.sector || "")}<br><small>Généré le ${new Date().toLocaleString("fr-FR")} · ${st.user.name}</small></p>
+${A ? `<h2>Verdict</h2><p><b>${esc(A.verdict)}</b> · score global ${Math.round(Object.values(A.scores || {}).reduce((a, b) => a + b, 0) / Math.max(1, Object.keys(A.scores || {}).length))}/100</p><p>${esc(A.summary)}</p>${A.gaps?.length ? `<p><small>Non couvert : ${esc(A.gaps.join(", "))}</small></p>` : ""}
+<h2>Notes par domaine</h2><table><tr><th>Domaine</th><th>Note</th><th>Repère sectoriel</th></tr>${t.domains.map(d => `<tr><td>${esc(d)}</td><td>${A.scores?.[d] ?? "–"}</td><td>${t.bench[d] ?? ""}</td></tr>`).join("")}</table>
+<h2>Constats</h2>${(A.findings || []).map(f => `<div class="f ${esc(f.sev)}"><span class="sev">${esc(f.sev)}</span> · <small>${esc(f.domain)}</small><br><b>${esc(f.title)}</b><p>${esc(f.obs)}</p>${f.quote ? `<p><i>« ${esc(f.quote)} »</i> <small>${fmt(f.t)}</small></p>` : ""}${f.reco ? `<p><b>Recommandation.</b> ${esc(f.reco)}</p>` : ""}</div>`).join("")}
+<h2>Plan d'actions</h2><table><tr><th>Action</th><th>Responsable</th><th>Délai</th></tr>${(A.actions || []).map(a => `<tr><td>${esc(a.label)}</td><td>${esc(a.owner || "")}</td><td>${a.days ? a.days + " jours" : ""}</td></tr>`).join("")}</table>` : "<p><i>Analyse IA non encore lancée.</i></p>"}
+${v.photos.length ? `<h2>Photos</h2>${v.photos.map(p => `<img src="${p.src}" alt="${esc(p.name)}">`).join("")}` : ""}
+<h2>Transcription</h2>${v.lines.map(l => `<div><span class="tc">${fmt(l.t)}</span>${esc(l.text)}</div>`).join("")}
+</body></html>`;
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([html], { type: "text/html" })); a.download = "Synthese-" + (v.name || "visite").replace(/[^\w-]+/g, "_") + ".html"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }
   useEffect(() => { if (lang === vLang || v.translations[lang] || !v.lines.length) return; setTrBusy(true);
     ai.json(prompts.translate(v.lines, lang), { modelTier: "quick" }).then(r => save(x => ({ ...x, translations: { ...x.translations, [lang]: r.lines } }))).catch(e => st.toast(aiErr(e))).finally(() => setTrBusy(false)); }, [lang]);
   useEffect(() => { if (online && v.pendingAnalysis && !busy) run(); }, [online]);
@@ -1612,8 +1658,8 @@ function Synthesis({ v, save, onBack, go }) {
     const findings = (r.findings || []).map((f, i) => ({ id: ref + "-F" + (i + 1), ai: true, validation: "pending", ...f, photos: v.photos.filter(p => Math.abs(p.t - (f.t || 0)) < 45).map(p => p.id) }));
     const actions = (r.actions || []).map((a, i) => ({ id: ref.replace("INS-", "A-") + "-" + (i + 1), label: a.label, finding: findings[a.findingIndex]?.id, owner: a.owner || "Directeur de site", due: addDays(v.date, a.days || 30), status: "ouvert", updates: [] }));
     const scores = {}; t.domains.forEach(d => scores[d] = Math.round(r.scores?.[d] ?? 50));
-    const audit = { id, ref, site: v.site || v.name, city: v.place, country: "", sector: Object.keys(SECTOR_TYPE).find(k => SECTOR_TYPE[k] === v.type) || "Industrie", type: v.type, date: v.date, status: "À valider", lang: v.lang, source: "mine", org: CLIENT_ORG, author: st.user.name, team: v.team,
-      scores, score: Math.round(Object.values(scores).reduce((a, b) => a + b, 0) / t.domains.length), verdict: r.verdict, summary: r.summary, gaps: r.gaps, findings, actions, photos, transcript: v.lines.map(l => [l.t, l.text]), checklist: v.checklist, consent: v.consent, fromVisit: v.id, sections: v.sections, trace: v.trace, translations: v.translations };
+    const audit = { id, ref, site: v.site || v.name, city: v.place, country: "", sector: v.sector || Object.keys(SECTOR_TYPE).find(k => SECTOR_TYPE[k] === v.type) || "Usine", type: v.type, date: v.date, status: "À valider", lang: v.lang, source: "mine", org: CLIENT_ORG, author: st.user.name, team: v.team,
+      scores, score: Math.round(Object.values(scores).reduce((a, b) => a + b, 0) / t.domains.length), verdict: r.verdict, summary: r.summary, gaps: r.gaps, findings, actions, photos, transcript: v.lines.map(l => [l.t, l.text]), recordings: v.recordings.filter(r => r.audio).map(r => ({ id: r.id, name: r.name, offset: r.offset, duration: r.duration, audio: r.audio })), checklist: v.checklist, consent: v.consent, fromVisit: v.id, sections: v.sections, trace: v.trace, translations: v.translations };
     st.upsertAudit(audit); (r.practices || []).forEach(p => st.addPractice({ ...p, site: audit.site, ai: true }));
     save({ auditId: id }); go("/audit/" + id);
   }
@@ -1623,8 +1669,10 @@ function Synthesis({ v, save, onBack, go }) {
     <div className="row wrap"><button className="icon-btn" style={{ border: "1px solid var(--border)" }} onClick={() => setPlaying(!playing)}><Icon n={playing ? "pause" : "play"} s={16} /></button>
       <span className="mono" style={{ fontSize: 13 }}>{fmt(cur)} / {fmt(range[1])}</span><div className="spacer" />
       <select className="input" style={{ width: 220, height: 34 }} value={sel} onChange={e => setSel(e.target.value)}><option value="all">Tous les enregistrements</option>{v.recordings.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select>
-      <div className="seg">{["fr", "en", "es"].map(k => <button key={k} className={lang === k ? "on" : ""} style={lang === k ? { background: "var(--bp-red)", color: "#fff" } : null} onClick={() => setLang(k)}>{k.toUpperCase()}</button>)}</div>{trBusy && <span className="spinner" />}</div>
-    <div className="tl" style={{ marginTop: 10 }} onClick={e => { const r = e.currentTarget.getBoundingClientRect(); setCur(range[0] + (e.clientX - r.left) / r.width * (range[1] - range[0])); }}>
+      <div className="seg">{["fr", "en", "es"].map(k => <button key={k} className={lang === k ? "on" : ""} style={lang === k ? { background: "var(--bp-red)", color: "#fff" } : null} onClick={() => setLang(k)}>{k.toUpperCase()}</button>)}</div>{trBusy && <span className="spinner" />}
+      <button className="btn btn-sm" onClick={downloadReport} title="Télécharger la synthèse"><Icon n="download" s={15} />Télécharger</button></div>
+    <audio ref={audioRef} hidden onTimeUpdate={e => { const r = v.recordings.find(x => x.id === e.target.dataset.rec); if (r && playing) setCur(r.offset + e.target.currentTime); }} onEnded={() => { const r = v.recordings.find(x => x.id === audioRef.current?.dataset.rec); if (r) jump(r.offset + r.duration + .01); }} />
+    <div className="tl" style={{ marginTop: 10 }} onClick={e => { const r = e.currentTarget.getBoundingClientRect(); jump(range[0] + (e.clientX - r.left) / r.width * (range[1] - range[0])); }}>
       <div className="track" /><div className="prog" style={{ width: (cur - range[0]) / (range[1] - range[0]) * 100 + "%" }} />
       {sel === "all" && v.recordings.slice(1).map(r => <div key={r.id} className="mk" style={{ left: r.offset / total * 100 + "%", background: "var(--text)", width: 2 }} />)}
       {v.photos.filter(p => p.t >= range[0] && p.t <= range[1]).map(p => <div key={p.id} className="mk" title={p.name} style={{ left: photoAt(p) + "%" }} />)}
@@ -1635,12 +1683,12 @@ function Synthesis({ v, save, onBack, go }) {
       const newRec = sel === "all" && l.rec !== lines[i - 1]?.rec;
       return <React.Fragment key={i}>
         {newRec && <div className="eyebrow" style={{ padding: "12px 8px 4px", borderTop: i ? "1px solid var(--border-soft)" : 0 }}>{v.recordings.find(r => r.id === l.rec)?.name || "En cours"}</div>}
-        {sec && <button className="h3" style={{ border: 0, background: "none", padding: "12px 8px 4px", textAlign: "left" }} onClick={() => setCur(sec.t)}>{sec[lang] || sec.fr} <span className="mono faint" style={{ fontSize: 11, fontWeight: 400 }}>{fmt(sec.t)}</span></button>}
+        {sec && <button className="h3" style={{ border: 0, background: "none", padding: "12px 8px 4px", textAlign: "left" }} onClick={() => jump(sec.t)}>{sec[lang] || sec.fr} <span className="mono faint" style={{ fontSize: 11, fontWeight: 400 }}>{fmt(sec.t)}</span></button>}
         {ph.map(p => <img key={p.id} src={p.src} style={{ width: 120, height: 80, objectFit: "cover", margin: "4px 8px 4px 62px", display: "block" }} />)}
-        <div className={"tr-line" + (curLine === l ? " cur" : "")} onClick={() => setCur(l.t)}><span className="tc">{fmt(l.t)}</span><span>{txt(l)}</span></div></React.Fragment>; })}
+        <div className={"tr-line" + (curLine === l ? " cur" : "")} onClick={() => jump(l.t)}><span className="tc">{fmt(l.t)}</span><span>{txt(l)}</span></div></React.Fragment>; })}
     {!lines.length && <div className="empty">Pas encore de transcription.</div>}
   </div>;
-  const Plan = <PlanView v={v} cur={cur} range={range} onSeek={setCur} />;
+  const Plan = <PlanView v={v} cur={cur} range={range} onSeek={jump} />;
   const A = v.analysis;
   const Report = <div>
     {!A ? <div className="card card-pad">
@@ -1653,7 +1701,7 @@ function Synthesis({ v, save, onBack, go }) {
       <div className="card card-pad row wrap" style={{ gap: 18 }}><Gauge value={Math.round(Object.values(A.scores || {}).reduce((a, b) => a + b, 0) / Math.max(1, Object.keys(A.scores || {}).length))} size={104} /><div style={{ flex: 1, minWidth: 200 }}><div className="h2">{A.verdict}</div><p style={{ fontSize: 14, margin: "6px 0 0" }}>{A.summary}</p>{A.gaps?.length > 0 && <p className="faint" style={{ fontSize: 13, marginBottom: 0 }}>Non couvert : {A.gaps.join(", ")}</p>}</div></div>
       <div className="card card-pad">{t.domains.map(d => <div key={d} style={{ marginBottom: 10 }}><div className="row between" style={{ fontSize: 13 }}><span>{d}</span><b>{A.scores?.[d] ?? "–"}</b></div><div className="bar"><b className={(A.scores?.[d] ?? 0) < 50 ? "red" : ""} style={{ width: (A.scores?.[d] ?? 0) + "%" }} /><em style={{ left: t.bench[d] + "%" }} /></div></div>)}</div>
       {(A.findings || []).map((f, i) => <div key={i} className={"finding " + f.sev}><div className="row"><Sev s={f.sev} /><span className="faint" style={{ fontSize: 13 }}>{f.domain}</span></div><div className="h3" style={{ marginTop: 6 }}>{f.title}</div><p style={{ fontSize: 14, margin: "6px 0 0" }}>{f.obs}</p>
-        {f.quote && <button className="quote" style={{ border: 0, borderLeft: "2px solid var(--border)", background: "none", textAlign: "left", display: "block", width: "100%", cursor: "pointer" }} onClick={() => { setCur(f.t || 0); setTab("transcript"); }}>« {f.quote} » <span className="mono faint" style={{ fontStyle: "normal", fontSize: 11 }}>{fmt(f.t)}</span>{f.quoteFr && f.quoteFr !== f.quote && <div style={{ fontStyle: "normal", fontSize: 13 }}>{f.quoteFr}</div>}</button>}
+        {f.quote && <button className="quote" style={{ border: 0, borderLeft: "2px solid var(--border)", background: "none", textAlign: "left", display: "block", width: "100%", cursor: "pointer" }} onClick={() => { jump(f.t || 0); setTab("transcript"); }}>« {f.quote} » <span className="mono faint" style={{ fontStyle: "normal", fontSize: 11 }}>{fmt(f.t)}</span>{f.quoteFr && f.quoteFr !== f.quote && <div style={{ fontStyle: "normal", fontSize: 13 }}>{f.quoteFr}</div>}</button>}
         <div className="row" style={{ marginTop: 6 }}>{v.photos.filter(p => Math.abs(p.t - (f.t || 0)) < 45).map(p => <img key={p.id} src={p.src} style={{ width: 60, height: 60, objectFit: "cover" }} />)}</div>
         {f.reco && <div style={{ fontSize: 14, marginTop: 8 }}><b>Recommandation.</b> {f.reco}</div>}</div>)}
       <div className="row wrap">{v.auditId ? <button className="btn btn-dark" onClick={() => go("/audit/" + v.auditId)}><Icon n="report" />Ouvrir le rapport complet</button> : <button className="btn btn-red" onClick={file}><Icon n="report" />Classer dans l'espace audits</button>}
