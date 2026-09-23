@@ -342,6 +342,52 @@ const AUDIT_TYPES = {
       ["Documentation","R.4226-14","Vérification périodique des installations électriques"],
     ],
   },
+  "visite-42": {
+    label: "Visite multicritère de campus (sécurité de l'étage incluse)",
+    short: "Campus 42",
+    refs: ["Modèle d'évaluation multicritère de visite de site", "Qualiopi", "Code du travail R4227 (incendie)", "NF P01-012 garde-corps"],
+    domains: ["Pédagogie", "Qualité", "Sécurité", "Santé et bien-être", "Environnement", "Social et gouvernance", "Infrastructures", "Insertion professionnelle"],
+    bench: { "Pédagogie": 72, "Qualité": 70, "Sécurité": 75, "Santé et bien-être": 68, "Environnement": 62, "Social et gouvernance": 68, "Infrastructures": 74, "Insertion professionnelle": 70 },
+    items: [
+      ["Pédagogie","1.1","Modèle pédagogique décrit (pair à pair, projets)"],
+      ["Pédagogie","1.2","Sélection et admission (tests, Piscine, conditions d'accès)"],
+      ["Pédagogie","1.3","Diplômes et certifications délivrés (titres RNCP)"],
+      ["Pédagogie","1.4","Suivi de la progression et indicateurs de réussite"],
+      ["Qualité","2.1","Certifications et labels (Qualiopi, GEN)"],
+      ["Qualité","2.2","Accompagnement des étudiants (Bocal)"],
+      ["Qualité","2.3","Évaluation des apprentissages et biais de correction"],
+      ["Qualité","2.4","Mesure de la satisfaction"],
+      ["Sécurité","3.1","Contrôle d'accès et sûreté du bâtiment ouvert 24h/24"],
+      ["Sécurité","3.2","Sécurité des personnes en horaires tardifs"],
+      ["Sécurité","3.3","Sécurité informatique et des données"],
+      ["Sécurité","3.4","Accessibilité PMR"],
+      ["Sécurité","3.5","Extincteurs de l'étage présents, vérifiés et fixés"],
+      ["Sécurité","3.6","Issues de secours dégagées, barres anti-panique"],
+      ["Sécurité","3.7","Éclairage de sécurité et déclencheurs d'alarme"],
+      ["Sécurité","3.8","Plan d'évacuation affiché et à jour"],
+      ["Sécurité","3.9","Garde-corps de la terrasse jardin conformes"],
+      ["Santé et bien-être","4.1","Ergonomie des postes de travail"],
+      ["Santé et bien-être","4.2","Charge de travail et rythme (Piscine)"],
+      ["Santé et bien-être","4.3","Espaces de détente"],
+      ["Santé et bien-être","4.4","Soutien psychologique et prévention des RPS"],
+      ["Environnement","5.1","Consommation énergétique du parc informatique"],
+      ["Environnement","5.2","Performance énergétique du bâtiment"],
+      ["Environnement","5.3","Mobilité douce et desserte"],
+      ["Environnement","5.4","Fin de vie des équipements (DEEE)"],
+      ["Environnement","5.5","Bilan carbone"],
+      ["Social et gouvernance","6.1","Statut et gouvernance"],
+      ["Social et gouvernance","6.2","Accessibilité financière (gratuité, aides)"],
+      ["Social et gouvernance","6.3","Inclusion et égalité des chances (42i)"],
+      ["Social et gouvernance","6.4","Mixité"],
+      ["Social et gouvernance","6.5","Éthique et procédure de signalement"],
+      ["Infrastructures","7.1","Capacité informatique et réseau"],
+      ["Infrastructures","7.2","Bâtiment et aménagement (8 étages, Art42)"],
+      ["Infrastructures","7.3","Disponibilité des équipements"],
+      ["Insertion professionnelle","8.1","Stages et expériences professionnelles"],
+      ["Insertion professionnelle","8.2","Partenariats entreprises"],
+      ["Insertion professionnelle","8.3","Réseau et alumni"],
+    ],
+  },
 };
 Object.values(AUDIT_TYPES).forEach(t => { t.items = t.items.map((it, i) => ({ id: "c" + i, domain: it[0], code: it[1], label: it[2] })); });
 
@@ -448,6 +494,18 @@ const AUDIT_42 = () => mkAudit({ id: "a42", ref: "INS-2026-0151", site: "École 
   sections: [{ t: 0, fr: "Entrée et plan d'évacuation", en: "Entrance and evacuation plan", es: "Entrada y plano de evacuación" }, { t: 60, fr: "Cage d'escalier nord", en: "North staircase", es: "Escalera norte" }, { t: 120, fr: "Régie", en: "Control room", es: "Sala de control" }, { t: 180, fr: "Espace modulaire", en: "Modular space", es: "Espacio modular" }, { t: 240, fr: "Cage d'escalier sud", en: "South staircase", es: "Escalera sur" }, { t: 260, fr: "Terrasse jardin", en: "Garden terrace", es: "Terraza jardín" }, { t: 310, fr: "Escalier du bosquet", en: "Grove stairs", es: "Escalera del bosquecillo" }, { t: 360, fr: "Accueil et registre", en: "Reception and register", es: "Recepción y registro" }],
   plan: { src: PLAN_42_SRC, name: "Plan d'évacuation R+3", points: { 0: { x: .52, y: .47 }, 60: { x: .7, y: .37 }, 120: { x: .7, y: .49 }, 180: { x: .7, y: .65 }, 240: { x: .7, y: .87 }, 260: { x: .4, y: .62 }, 310: { x: .22, y: .43 }, 360: { x: .53, y: .5 } } },
 });
+/* Visite en cours de démonstration : R+3 de l'école 42, déjà parcourue en partie (plan, chapitres, transcription, cases IA). */
+const VISIT_42 = () => ({
+  id: "v42demo", code: "ECOLE4", name: "Visite École 42 · sécurité R+3", site: "École 42 Paris", date: today(), place: "96 boulevard Bessières, Paris 17e", gps: null, lang: "fr", type: "visite-42", sector: "Public", team: ["Xavier Tinel"],
+  consent: { at: new Date(Date.now() - 3600e3).toISOString(), participants: "Responsable des services généraux, équipe du Bocal", autoBlur: false }, createdAt: Date.now() - 3600e3,
+  recordings: [{ id: "r42", name: "Enregistrement 1", segments: [], duration: 300, offset: 0, at: Date.now() - 3600e3, audio: null }],
+  lines: [[0, "Visite de sécurité du niveau R+3, école 42, 96 boulevard Bessières. Accompagné du responsable des services généraux."], [8, "Départ du point « Vous êtes ici » près de l'ascenseur nord-ouest. Le plan d'évacuation est affiché, lisible et orienté, légende complète."], [60, "Cage d'escalier nord : les deux issues de secours sont dégagées, barres anti-panique fonctionnelles, portes dans le sens de l'évacuation."], [90, "Blocs d'éclairage de sécurité allumés dans la cage nord, déclencheur manuel d'alarme présent et intact."], [180, "Espace modulaire : pictogrammes d'évacuation visibles au-dessus de chaque issue, cheminements libres, postes des clusters bien rangés."], [240, "Cage d'escalier sud : issue dégagée, barre anti-panique fonctionnelle, palier libre."], [260, "Terrasse jardin : garde-corps périphérique d'environ 1 mètre 10, lisses complètes, fixations saines, sol propre."], [290, "Il reste à contrôler les extincteurs de l'étage, en particulier celui de la régie, et la sécurité de nuit avec l'équipe du Bocal."]].map(([t, text]) => ({ t, text, lang: "fr", rec: "r42" })),
+  sections: [{ t: 0, fr: "Entrée et plan d'évacuation", en: "Entrance and evacuation plan", es: "Entrada y plano de evacuación" }, { t: 60, fr: "Cage d'escalier nord", en: "North staircase", es: "Escalera norte" }, { t: 180, fr: "Espace modulaire", en: "Modular space", es: "Espacio modular" }, { t: 240, fr: "Cage d'escalier sud", en: "South staircase", es: "Escalera sur" }, { t: 260, fr: "Terrasse jardin", en: "Garden terrace", es: "Terraza jardín" }, { t: 290, fr: "Régie : extincteur à vérifier", en: "Control room: extinguisher to check", es: "Sala de control: extintor por verificar" }],
+  plan: { src: PLAN_42_SRC, name: "Plan d'évacuation R+3", points: { 0: { x: .52, y: .47 }, 60: { x: .7, y: .37 }, 180: { x: .7, y: .65 }, 240: { x: .7, y: .87 }, 260: { x: .4, y: .62 }, 290: { x: .61, y: .53 } } },
+  photos: [], trace: [], translations: {}, analysis: null, auditId: null, pendingAnalysis: false,
+  checklist: { c13: "ai", c14: "ai", c15: "ai", c16: "ai", c11: "manual" },
+});
+
 const SEED_AUDITS = () => [
   AUDIT_42(),
   mkAudit({ id: "a1", ref: "INS-2026-0142", site: "Metalúrgica Norte", city: "Monterrey", country: "Mexique", sector: "Industrie", type: "qualif-indus", date: "2026-09-08", status: "Publié", lang: "es",
@@ -588,12 +646,21 @@ Site : ${visit.site || visit.name}, ${visit.place}. Langue parlée : ${visit.lan
 Transcription horodatée (secondes | texte) :
 ${lines.map(l => `${Math.round(l.t)} | ${l.text}`).join("\n") || "(vide)"}
 ${visit.photos.length ? `Photos jointes : ${visit.photos.length}, prises aux secondes ${visit.photos.map(p => Math.round(p.t)).join(", ")} dans le même ordre. Décris ce que tu observes sur chaque photo.` : ""}
+${visit.photos.filter(p => p.ai).length ? `Pré-analyse des photos par l'IA pendant la visite (à confirmer et à intégrer aux constats, un défaut photographié est un constat prioritaire) :\n${visit.photos.filter(p => p.ai).map(p => `- ${Math.round(p.t)}s · ${p.ai.caption} · défauts : ${(p.ai.ko || []).join("; ") || "aucun"} · conforme : ${(p.ai.ok || []).join("; ") || "-"} · gravité ${p.ai.sev}`).join("\n")}` : ""}
+Points de grille cochés par l'IA d'après la transcription ou des documents importés : ${Object.entries(visit.checklist || {}).filter(([, s]) => s === "ai").map(([k]) => k).join(", ") || "aucun"}.
 Règles : français, pas de tiret long, ne jamais inventer un fait absent des sources ; si un domaine n'est pas couvert, note-le autour de 50 et signale-le dans "gaps".
 Réponds UNIQUEMENT en JSON :
 {"verdict":"...","summary":"3 phrases","scores":{"<domaine>":0-100},"findings":[{"sev":"critique|majeur|mineur|positif","domain":"<domaine>","title":"...","obs":"...","quote":"citation exacte en langue d'origine ou vide","quoteFr":"traduction française ou vide","t":secondes,"reco":"...","checkItem":"id grille ou vide"}],"photoNotes":[{"index":0,"ok":["..."],"ko":["..."]}],"actions":[{"label":"...","findingIndex":0,"owner":"...","days":7}],"gaps":["domaines ou points non couverts"],"practices":[{"domain":"...","title":"...","desc":"..."}]}`;
   },
   coverage(type, lines) {
-    return `Grille d'audit (id | point) :\n${type.items.map(i => `${i.id} | ${i.label}`).join("\n")}\n\nExtrait de transcription de visite :\n${lines.map(l => l.text).join("\n")}\n\nQuels points de la grille sont abordés, même partiellement, dans cet extrait ? Réponds UNIQUEMENT en JSON : {"covered":["c0","c3"]}`;
+    return `Grille d'audit (id | domaine | point) :\n${type.items.map(i => `${i.id} | ${i.domain} | ${i.label}`).join("\n")}\n\nExtrait (transcription de visite ou document importé, toute langue possible : français, anglais, espagnol, arabe) :\n${lines.map(l => l.text).join("\n")}\n\nQuels points de la grille sont renseignés ou abordés, même partiellement, dans cet extrait ? Ne retiens que ceux réellement traités. Réponds UNIQUEMENT en JSON : {"covered":["c0","c3"]}`;
+  },
+  photo(type, lines, note) {
+    return `Tu es auditeur. Analyse cette photo prise pendant une visite de site.
+Contexte récent de la transcription : ${lines.map(l => l.text).join(" / ") || "(aucun)"}${note ? `\nLégende donnée par l'auditeur : ${note}` : ""}
+Grille (id | point) :\n${type.items.map(i => `${i.id} | ${i.label}`).join("\n")}
+Décris ce que montre la photo (équipement, lieu, état) et relève les défauts visibles (ex. extincteur : date de vérification, pression, goupille, fixation, accessibilité ; issue : encombrement ; garde-corps : hauteur, lisses, corrosion). Ne jamais inventer ce qui n'est pas visible.
+Réponds UNIQUEMENT en JSON : {"caption":"titre court (5 mots max)","location":"lieu probable sur le plan ou vide","ok":["points conformes visibles"],"ko":["défauts visibles"],"sev":"critique|majeur|mineur|positif","checkItems":["ids de grille que cette photo permet de vérifier"],"summary":"1 phrase en français"}`;
   },
   translate(lines, lang) {
     const L = { fr: "français", en: "anglais", es: "espagnol", ar: "arabe (standard moderne)" }[lang];
@@ -1577,18 +1644,66 @@ function Capture({ v, save, onBack, onSynth }) {
         const lines = sentences.map((text, i) => ({ t: t0 + i * .01, text, rec: id }));
         save(x => ({ ...x, recordings: [...x.recordings, doc], lines: [...x.lines, ...lines].sort((a, b) => a.t - b.t) }));
         st.toast(f.name + " : " + sentences.length + " phrases importées");
+        coverDoc(f.name, lines);
       } catch (e) { st.toast("Lecture impossible : " + f.name); }
     }
   }
+  // Après un import, l'IA parcourt tout le document (par blocs) et coche les points de grille renseignés.
+  const [docBusy, setDocBusy] = useState("");
+  async function coverDoc(name, lines) {
+    if (!(await ai.available())) return;
+    setDocBusy(name); let total = 0;
+    try {
+      for (let i = 0; i < lines.length; i += 30) {
+        const chunk = lines.slice(i, i + 30);
+        const r = await ai.json(prompts.coverage(t, chunk), { modelTier: "quick" });
+        const add = {}; (r.covered || []).forEach(id => { if (t.items.some(x => x.id === id) && !vRef.current.checklist[id]) add[id] = "ai"; });
+        if (Object.keys(add).length) { total += Object.keys(add).length; save(x => ({ ...x, checklist: { ...x.checklist, ...add } })); }
+      }
+      st.toast(total ? `${name} : ${total} point${total > 1 ? "s" : ""} de grille coché${total > 1 ? "s" : ""} par l'IA` : `${name} : aucun nouveau point de grille`);
+    } catch (e) { st.toast("Lecture IA du document : " + aiErr(e)); }
+    setDocBusy("");
+  }
   async function addPhotos(files) {
+    const added = [];
     for (const f of files) {
       let src = await compressImage(f);
       if (v.consent?.autoBlur) { const faces = await detectFaces(src); if (faces?.length) src = await blurRegions(src, faces.map(r => ({ x: r.x - r.w * .1, y: r.y - r.h * .15, w: r.w * 1.2, h: r.h * 1.3 }))); }
       const last = vRef.current.trace.at(-1);
       const p = { id: uid(), name: "Photo " + (vRef.current.photos.length + 1), src, at: Date.now(), t: baseT + elapsedOf(segsRef.current), recState: state, pos: last ? { lat: last.lat, lng: last.lng } : v.gps };
-      save(x => ({ ...x, photos: [...x.photos, p] }));
+      save(x => ({ ...x, photos: [...x.photos, p] })); added.push(p);
     }
     st.toast(files.length > 1 ? files.length + " photos ajoutées" : "Photo ajoutée");
+    for (const p of added) analyzePhoto(p);
+  }
+  // Analyse IA d'une photo : légende, défauts, points de grille vérifiés, étape sur le plan.
+  const [photoBusy, setPhotoBusy] = useState(0);
+  async function analyzePhoto(p, note) {
+    const lim = await ai.canImages(); if (!lim) return;
+    setPhotoBusy(n => n + 1);
+    try {
+      const recent = vRef.current.lines.filter(l => l.t <= p.t + 1).slice(-6);
+      const r = await ai.json(prompts.photo(t, recent, note), { modelTier: "default", images: [dataUrlToBlob(p.src)] });
+      const aiNote = { caption: String(r.caption || "Photo"), location: r.location || "", ok: r.ok || [], ko: r.ko || [], sev: ["critique", "majeur", "mineur", "positif"].includes(r.sev) ? r.sev : (r.ko?.length ? "majeur" : "positif"), summary: r.summary || "" };
+      const ids = (r.checkItems || []).filter(id => t.items.some(i => i.id === id));
+      save(x => {
+        const checklist = { ...x.checklist }; ids.forEach(id => { if (!checklist[id]) checklist[id] = "ai"; });
+        const photos = x.photos.map(y => y.id === p.id ? { ...y, name: aiNote.caption, ai: aiNote } : y);
+        let sections = x.sections || [], plan = x.plan;
+        if (plan) {
+          const tt = Math.round(p.t); const placed = [...sections].filter(s => plan.points?.[s.t]).sort((a, b) => a.t - b.t);
+          const byName = aiNote.location ? placed.find(s => (s.fr || "").toLowerCase().split(/\W+/).some(w => w.length > 3 && aiNote.location.toLowerCase().includes(w))) : null;
+          const anchor = byName || [...placed].reverse().find(s => s.t <= tt) || placed.at(-1);
+          const pt = anchor ? { x: Math.min(.97, plan.points[anchor.t].x + .035), y: Math.min(.97, plan.points[anchor.t].y + .035) } : { x: .5, y: .5 };
+          if (!sections.some(s => s.t === tt)) sections = [...sections, { t: tt, fr: aiNote.caption, en: aiNote.caption, es: aiNote.caption, photo: p.id, sev: aiNote.sev }];
+          else sections = sections.map(s => s.t === tt ? { ...s, photo: p.id, sev: aiNote.sev } : s);
+          plan = { ...plan, points: { ...(plan.points || {}), [tt]: pt } };
+        }
+        return { ...x, checklist, photos, sections, plan };
+      });
+      st.toast((aiNote.ko.length ? "Défaut détecté : " + aiNote.ko[0] : "Photo analysée : " + aiNote.caption) + (ids.length ? ` · ${ids.length} point${ids.length > 1 ? "s" : ""} de grille coché${ids.length > 1 ? "s" : ""}` : ""));
+    } catch (e) { st.toast("Analyse photo : " + aiErr(e)); }
+    setPhotoBusy(n => n - 1);
   }
   useEffect(() => () => { speech.current?.stop(); media.current.stream?.getTracks().forEach(x => x.stop()); }, []);
   // photos envoyées depuis le téléphone (QR code) : on interroge le relais toutes les 4 s
@@ -1606,6 +1721,7 @@ function Capture({ v, save, onBack, onSynth }) {
           const add = fresh.map((p, i) => ({ id: p.id, name: p.note ? p.note : p.name || ("Photo mobile " + (vRef.current.photos.length + i + 1)), src: p.src, at: p.at || Date.now(), t: tt, recState: state, pos: last ? { lat: last.lat, lng: last.lng } : v.gps, fromMobile: true }));
           save(x => ({ ...x, photos: [...x.photos, ...add.filter(a => !x.photos.some(q => q.id === a.id))] }));
           st.toast(fresh.length > 1 ? fresh.length + " photos reçues du téléphone" : "Photo reçue du téléphone");
+          add.forEach((p, i) => analyzePhoto(p, fresh[i]?.note));
         }
         if (d.deleted?.length) { const gone = new Set(d.deleted.map(x => x.id)); const n = vRef.current.photos.filter(p => p.fromMobile && gone.has(p.id)).length; if (n) { save(x => ({ ...x, photos: x.photos.filter(p => !(p.fromMobile && gone.has(p.id))) })); st.toast(n > 1 ? n + " photos retirées depuis le téléphone" : "Photo retirée depuis le téléphone"); } }
         mobileSince.current = Math.max(mobileSince.current, ...(d.photos || []).map(p => p.received || 0), ...(d.deleted || []).map(x => x.at || 0));
@@ -1670,6 +1786,8 @@ function Capture({ v, save, onBack, onSynth }) {
         <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={e => { addPhotos([...e.target.files]); e.target.value = ""; }} />
         <input ref={docRef} type="file" accept=".pdf,.docx,.txt,.md" multiple hidden onChange={e => { addDocs([...e.target.files]); e.target.value = ""; }} />
         {transcribing && <div className="row mono faint" style={{ fontSize: 12, marginTop: 12 }}><span className="spinner" style={{ width: 12, height: 12 }} />Transcription et détection de la langue…</div>}
+        {docBusy && <div className="row mono faint" style={{ fontSize: 12, marginTop: 12 }}><span className="spinner" style={{ width: 12, height: 12 }} />L'IA lit {docBusy} et met à jour la grille…</div>}
+        {photoBusy > 0 && <div className="row mono faint" style={{ fontSize: 12, marginTop: 12 }}><span className="spinner" style={{ width: 12, height: 12 }} />L'IA analyse la photo…</div>}
         {mobileState && <button className="mono faint" style={{ fontSize: 11, marginTop: 10, border: 0, background: "none", cursor: "pointer" }} onClick={() => setSheet("share")}><span style={{ display: "inline-block", width: 7, height: 7, borderRadius: 4, background: mobileState.includes("injoignable") ? "var(--bp-red)" : "var(--sev-pos)", marginRight: 6 }} />{mobileState} · code {v.code}</button>}
         {state !== "idle" && <div className="mono faint" style={{ fontSize: 11, marginTop: 12 }}>Les photos seront liées à {state === "rec" ? "REC " + fmt(baseT + elapsed) : "la position EN PAUSE"}</div>}
       </div>
@@ -1919,7 +2037,9 @@ function PlanImageView({ plan, sections, secName = (s) => s.fr, cur, onSeek, edi
         {pts.length > 1 && <polyline points={pts.map(x => (x.p.x * 100) + "," + (x.p.y * 100)).join(" ")} fill="none" stroke="#fff" strokeWidth="5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" opacity=".7" />}
         {pts.length > 1 && <polyline points={pts.map(x => (x.p.x * 100) + "," + (x.p.y * 100)).join(" ")} fill="none" stroke="var(--bp-red)" strokeWidth="2.5" strokeLinejoin="round" strokeDasharray="6 4" vectorEffect="non-scaling-stroke" />}
       </svg>
-      {pts.map(x => <button key={x.s.t} title={secName(x.s) + " · " + fmt(x.s.t)} onClick={e => { e.stopPropagation(); onSeek(x.s.t); }} style={{ position: "absolute", left: x.p.x * 100 + "%", top: x.p.y * 100 + "%", transform: "translate(-50%,-50%)", width: 28, height: 28, borderRadius: 14, border: "2px solid #fff", background: x.i === curIdx ? "var(--bp-red)" : "var(--text)", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", boxShadow: "0 1px 5px rgba(0,0,0,.45)", padding: 0 }}>{x.i + 1}</button>)}
+      {pts.map(x => x.s.photo
+        ? <button key={x.s.t} title={secName(x.s) + " · " + fmt(x.s.t)} onClick={e => { e.stopPropagation(); onSeek(x.s.t); }} style={{ position: "absolute", left: x.p.x * 100 + "%", top: x.p.y * 100 + "%", transform: "translate(-50%,-50%)", width: 44, height: 44, borderRadius: 22, border: `3px solid ${x.s.sev === "critique" || x.s.sev === "majeur" ? "var(--bp-red)" : "#fff"}`, background: "var(--bg)", color: x.s.sev === "critique" || x.s.sev === "majeur" ? "var(--bp-red)" : "var(--text)", cursor: "pointer", boxShadow: "0 0 0 3px rgba(255,61,71,.25), 0 2px 8px rgba(0,0,0,.4)", padding: 0, display: "grid", placeItems: "center" }}><Icon n="cam" s={18} /><span style={{ position: "absolute", right: -6, top: -6, width: 18, height: 18, borderRadius: 9, background: "var(--text)", color: "#fff", fontSize: 10, fontWeight: 700, display: "grid", placeItems: "center" }}>{x.i + 1}</span></button>
+        : <button key={x.s.t} title={secName(x.s) + " · " + fmt(x.s.t)} onClick={e => { e.stopPropagation(); onSeek(x.s.t); }} style={{ position: "absolute", left: x.p.x * 100 + "%", top: x.p.y * 100 + "%", transform: "translate(-50%,-50%)", width: 28, height: 28, borderRadius: 14, border: "2px solid #fff", background: x.i === curIdx ? "var(--bp-red)" : "var(--text)", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", boxShadow: "0 1px 5px rgba(0,0,0,.45)", padding: 0 }}>{x.i + 1}</button>)}
       {editable && selected != null && <div style={{ position: "absolute", left: 8, top: 8, background: "var(--bp-red)", color: "#fff", fontSize: 12, padding: "4px 8px", borderRadius: 4 }}>Cliquez sur le plan pour placer le chapitre {selIdx + 1}</div>}
     </div>
     {editable && <div style={{ padding: "8px 12px 12px" }}>
@@ -1973,7 +2093,7 @@ function App() {
   useEffect(() => { (async () => {
     const [a, v, p, types] = await Promise.all([storage.get("audits"), storage.get("visits"), storage.get("practices"), storage.get("types")]);
     if (types) Object.assign(AUDIT_TYPES, types);
-    setAudits(a ? (a.some(x => x.id === "a42") ? a.map(x => x.id === "a42" && (!x.plan || String(x.plan.src).startsWith("/demo/")) ? { ...AUDIT_42(), findings: x.findings, status: x.status } : x) : [AUDIT_42(), ...a]) : SEED_AUDITS()); setVisits(v || []); if (p) setPractices(p);
+    setAudits(a ? (a.some(x => x.id === "a42") ? a.map(x => x.id === "a42" && (!x.plan || String(x.plan.src).startsWith("/demo/")) ? { ...AUDIT_42(), findings: x.findings, status: x.status } : x) : [AUDIT_42(), ...a]) : SEED_AUDITS()); setVisits(v ? (v.some(x => x.id === "v42demo") || ls.get("insp.v42.removed", false) ? v : [VISIT_42(), ...v]) : [VISIT_42()]); if (p) setPractices(p);
   })(); }, []);
   useEffect(() => { if (audits) storage.set("audits", audits); }, [audits]);
   useEffect(() => { storage.set("visits", visits); }, [visits]);
@@ -1988,7 +2108,7 @@ function App() {
     updateAudit: (id, fn) => setAudits(l => l.map(a => a.id === id ? fn(a) : a)),
     upsertAudit: (a) => setAudits(l => [a, ...l.filter(x => x.id !== a.id)]),
     addVisit: (v) => setVisits(l => [v, ...l]),
-    removeVisit: (id) => setVisits(l => l.filter(v => v.id !== id)),
+    removeVisit: (id) => { if (id === "v42demo") ls.set("insp.v42.removed", true); setVisits(l => l.filter(v => v.id !== id)); },
     updateVisit: (id, fn) => setVisits(l => l.map(v => v.id === id ? fn(v) : v)),
     addPractice: (p) => setPractices(l => [{ id: uid(), ...p }, ...l]),
     addType: (k, t) => { AUDIT_TYPES[k] = t; storage.get("types").then(x => storage.set("types", { ...(x || {}), [k]: t })); force(n => n + 1); },
