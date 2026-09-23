@@ -316,10 +316,36 @@ const AUDIT_TYPES = {
       ["Achats responsables","ESRS S2","Devoir de vigilance sur la chaîne de valeur"],
     ],
   },
+  "securite-erp": {
+    label: "Audit sécurité incendie et accueil du public",
+    short: "Sécurité ERP",
+    refs: ["Code de la construction et de l'habitation (ERP)", "Arrêté du 25 juin 1980", "NF P01-012 garde-corps", "Code du travail R4227"],
+    domains: ["Moyens de secours", "Évacuation", "Éclairage et alarme", "Garde-corps et chutes", "Documentation"],
+    bench: { "Moyens de secours": 78, "Évacuation": 80, "Éclairage et alarme": 75, "Garde-corps et chutes": 72, "Documentation": 70 },
+    items: [
+      ["Moyens de secours","R.4227-29","Extincteurs présents, accessibles et signalés"],
+      ["Moyens de secours","NF S61-919","Vérification annuelle des extincteurs à jour"],
+      ["Moyens de secours","R.4227-29","Extincteurs fixés, pression et goupille conformes"],
+      ["Évacuation","CO 45","Issues de secours dégagées et non verrouillées"],
+      ["Évacuation","CO 46","Portes s'ouvrant dans le sens de l'évacuation, barres anti-panique"],
+      ["Évacuation","CO 52","Escaliers et paliers libres de tout stockage"],
+      ["Évacuation","MS 41","Plan d'évacuation affiché et à jour"],
+      ["Éclairage et alarme","EC 7","Blocs autonomes d'éclairage de sécurité fonctionnels"],
+      ["Éclairage et alarme","MS 62","Déclencheurs manuels d'alarme présents et intacts"],
+      ["Éclairage et alarme","CO 42","Signalisation des issues éclairée"],
+      ["Garde-corps et chutes","NF P01-012","Hauteur de garde-corps supérieure ou égale à 1 m"],
+      ["Garde-corps et chutes","NF P01-012","Espacement des barreaux inférieur à 11 cm, lisses présentes"],
+      ["Garde-corps et chutes","NF P01-013","Fixations et état des garde-corps, absence de corrosion"],
+      ["Garde-corps et chutes","R.4214-4","Escaliers extérieurs : main courante et nez de marche"],
+      ["Documentation","R.123-51","Registre de sécurité tenu à jour"],
+      ["Documentation","R.123-45","Dernière visite de la commission de sécurité"],
+      ["Documentation","R.4226-14","Vérification périodique des installations électriques"],
+    ],
+  },
 };
 Object.values(AUDIT_TYPES).forEach(t => { t.items = t.items.map((it, i) => ({ id: "c" + i, domain: it[0], code: it[1], label: it[2] })); });
 
-const SECTOR_TYPE = { "Industrie": "qualif-indus", "Électronique": "qualif-indus", "Textile": "smeta", "Agroalimentaire": "mdd-agro", "Chimie": "esg" };
+const SECTOR_TYPE = { "Industrie": "qualif-indus", "Électronique": "qualif-indus", "Textile": "smeta", "Agroalimentaire": "mdd-agro", "Chimie": "esg", "Public": "securite-erp" };
 const SECTORS = ["Entrepôt", "Boutique", "Usine", "Atelier", "Public"];
 const CLIENT_ORG = "Maison Valcourt";
 const USERS = {
@@ -396,7 +422,30 @@ function mkAudit(o) {
 }
 function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); }
 
+const AUDIT_42 = () => mkAudit({ id: "a42", ref: "INS-2026-0151", site: "École 42 Paris", city: "Paris 17e, 96 boulevard Bessières", country: "France", sector: "Public", type: "securite-erp", date: "2026-09-23", status: "À valider", lang: "fr",
+  scores: { "Moyens de secours": 58, "Évacuation": 66, "Éclairage et alarme": 61, "Garde-corps et chutes": 47, "Documentation": 82 },
+  verdict: "Conforme avec réserves, actions urgentes sur le jardin", summary: "Visite de sécurité du niveau R+3 et de la terrasse jardin. Les moyens de secours et les cheminements sont globalement en place, mais un extincteur est hors vérification et descellé, un BAES est défaillant et le garde-corps du jardin présente des lisses manquantes et une corrosion de pied. Documentation de sécurité bien tenue.",
+  gaps: ["Désenfumage non observé", "Compartimentage non vérifié"],
+  photos: [{ id: "p42-1", name: "Plan d'évacuation R+3", src: "/demo/plan-42-R3.jpg", t: 8, ok: ["Plan affiché, orienté, légende complète"], ko: [] }],
+  findings: [
+    { sev: "critique", domain: "Garde-corps et chutes", title: "Lisses manquantes et espacement de barreaux non conforme sur le garde-corps du jardin", obs: "Sur la portion côté allée diagonale, deux lisses intermédiaires sont absentes et l'espacement entre barreaux dépasse 11 cm, avec un risque de passage d'un enfant. La hauteur périphérique de 1,10 m est par ailleurs conforme.", quote: "Deux lisses intermédiaires sont manquantes et l'espacement entre barreaux dépasse 11 centimètres.", quoteFr: "", who: "Auditeur", t: 275, reco: "Condamner l'accès à cette portion de terrasse, remettre en place les lisses et vérifier l'ensemble du linéaire sous 15 jours.", checkItem: "c11", photos: ["p42-1"] },
+    { sev: "majeur", domain: "Garde-corps et chutes", title: "Pied de garde-corps corrodé avec jeu", obs: "Un pied de garde-corps présente une corrosion avancée à la base et un léger jeu au toucher.", quote: "Un pied de garde-corps présente une corrosion avancée à la base avec un léger jeu au toucher.", quoteFr: "", who: "Auditeur", t: 290, reco: "Contrôle de l'ensemble des ancrages par un professionnel, remplacement du pied et traitement anticorrosion.", checkItem: "c12" },
+    { sev: "majeur", domain: "Moyens de secours", title: "Extincteur de la régie hors vérification et descellé", obs: "La vérification annuelle est dépassée depuis janvier 2026, le support mural est descellé et l'appareil repose au sol.", quote: "La date de vérification annuelle est dépassée depuis janvier 2026. Le support mural est descellé.", quoteFr: "", who: "Auditeur", t: 120, reco: "Faire vérifier ou remplacer l'extincteur et refixer le support sous 8 jours ; planifier la vérification annuelle de tout le parc.", checkItem: "c1" },
+    { sev: "majeur", domain: "Éclairage et alarme", title: "Bloc autonome d'éclairage de sécurité défaillant en régie", obs: "Voyant éteint ; le test par télécommande n'a pas déclenché la lampe.", quote: "Un bloc autonome d'éclairage de sécurité a son voyant éteint.", quoteFr: "", who: "Auditeur", t: 140, reco: "Remplacer le BAES et réaliser le test mensuel de l'ensemble des blocs du niveau.", checkItem: "c7" },
+    { sev: "majeur", domain: "Évacuation", title: "Stockage sur le palier de l'escalier sud", obs: "Du matériel événementiel réduit la largeur de passage du palier intermédiaire à environ 80 cm.", quote: "Du matériel événementiel stocké sur le palier intermédiaire de l'escalier, réduisant la largeur de passage à environ 80 centimètres.", quoteFr: "", who: "Auditeur", t: 240, reco: "Dégager immédiatement le palier et rappeler la consigne d'interdiction de stockage dans les cages d'escalier.", checkItem: "c5" },
+    { sev: "mineur", domain: "Évacuation", title: "Porte de la cage nord difficile à ouvrir", obs: "La porte de droite frotte au sol et demande un effort important pour s'ouvrir complètement.", quote: "La porte de droite de la cage nord frotte sur le sol et demande un effort important.", quoteFr: "", who: "Responsable services généraux", t: 75, reco: "Régler la porte et vérifier l'effort d'ouverture des issues du niveau.", checkItem: "c4" },
+    { sev: "mineur", domain: "Éclairage et alarme", title: "Panneau d'issue de secours non éclairé côté est et capot de déclencheur fissuré", obs: "Un panneau d'issue n'est pas éclairé ; un capot de protection de déclencheur manuel est fissuré près de la cage sud.", quote: "Un panneau d'issue de secours côté est n'est pas éclairé.", quoteFr: "", who: "Auditeur", t: 200, reco: "Remplacer la source lumineuse et le capot fissuré.", checkItem: "c9" },
+    { sev: "mineur", domain: "Moyens de secours", title: "Extincteur partiellement masqué dans l'espace modulaire", obs: "Une armoire mobile déplacée pour un événement masque en partie un extincteur.", quote: "Un extincteur est partiellement masqué par une armoire mobile déplacée pour un événement.", quoteFr: "", who: "Auditeur", t: 180, reco: "Matérialiser au sol la zone de dégagement des extincteurs.", checkItem: "c0" },
+    { sev: "mineur", domain: "Garde-corps et chutes", title: "Escalier extérieur du bosquet : une seule main courante et nez de marche usés", obs: "L'escalier qui descend vers le jardin n'a qu'une main courante et ses bandes antidérapantes sont usées.", quote: "Une main courante d'un seul côté et les nez de marche antidérapants sont usés.", quoteFr: "", who: "Auditeur", t: 310, reco: "Ajouter une seconde main courante et remplacer les nez de marche.", checkItem: "c13" },
+    { sev: "positif", domain: "Documentation", title: "Registre de sécurité et vérifications à jour", obs: "Registre disponible à l'accueil, commission de sécurité 2024, vérification électrique 2025 consignée. Plan d'évacuation affiché et conforme.", quote: "Le registre de sécurité est disponible à l'accueil.", quoteFr: "", who: "Auditeur", t: 360, reco: "", checkItem: "c14", photos: ["p42-1"] },
+    { sev: "positif", domain: "Évacuation", title: "Issues nord et sud dégagées, barres anti-panique fonctionnelles", obs: "Pictogrammes visibles au-dessus de chaque issue, consignes ascenseurs affichées.", quote: "Les deux issues de secours sont dégagées.", quoteFr: "", who: "Auditeur", t: 60, reco: "", checkItem: "c3" },
+  ],
+  transcript: [[0, "Visite de sécurité du niveau R+3, école 42, 96 boulevard Bessières, Paris 17e. Accompagné du responsable des services généraux."], [8, "Nous partons du point « Vous êtes ici » à l'entrée du plateau, près de l'ascenseur nord-ouest. Le plan d'évacuation est affiché, lisible, orienté correctement, avec la légende complète."], [60, "Cage d'escalier nord : les deux issues de secours sont dégagées. La porte de gauche s'ouvre bien dans le sens de l'évacuation, la barre anti-panique fonctionne."], [75, "La porte de droite de la cage nord frotte sur le sol et demande un effort important pour s'ouvrir complètement. Le responsable indique qu'un réglage est prévu."], [100, "Extincteur près de l'ascenseur nord : eau pulvérisée 6 litres, goupille en place, pression dans le vert, vérification datée de mars 2026, conforme."], [120, "Extincteur à côté de la régie : la date de vérification annuelle est dépassée depuis janvier 2026. Le support mural est descellé et l'appareil repose au sol."], [140, "Dans la régie, un bloc autonome d'éclairage de sécurité a son voyant éteint. Le test avec la télécommande n'a pas déclenché la lampe."], [180, "Espace modulaire : les quatre extincteurs sont présents, signalés et accessibles. Un extincteur est partiellement masqué par une armoire mobile déplacée pour un événement."], [200, "Les pictogrammes d'évacuation sont visibles au-dessus de chaque issue. Un panneau d'issue de secours côté est n'est pas éclairé. Un capot de déclencheur manuel est fissuré près de la cage sud."], [240, "Cage d'escalier sud : issue dégagée, barre anti-panique fonctionnelle. Du matériel événementiel stocké sur le palier intermédiaire de l'escalier, réduisant la largeur de passage à environ 80 centimètres."], [260, "Sur la terrasse jardin, le garde-corps périphérique mesure environ 1 mètre 10 de hauteur, conforme."], [275, "Sur la portion du garde-corps côté allée diagonale, deux lisses intermédiaires sont manquantes et l'espacement entre barreaux dépasse 11 centimètres, avec un risque de passage pour un enfant."], [290, "Un pied de garde-corps présente une corrosion avancée à la base avec un léger jeu au toucher."], [310, "L'escalier extérieur du bosquet qui descend vers le jardin est équipé d'une main courante d'un seul côté et les nez de marche antidérapants sont usés."], [330, "Le sol de la terrasse est propre, sans encombrement, l'éclairage extérieur fonctionne. Les portes des deux ascenseurs affichent la consigne « ne pas utiliser en cas d'incendie »."], [360, "Le registre de sécurité est disponible à l'accueil, la dernière visite de la commission de sécurité date de 2024, la vérification des installations électriques de 2025 est consignée."], [380, "Le responsable s'engage à remettre en état l'extincteur de la régie et à faire réparer le garde-corps sous quinze jours."]],
+  checklist: { c0: "ai", c1: "ai", c2: "manual", c3: "manual", c4: "ai", c5: "ai", c6: "manual", c7: "ai", c8: "ai", c9: "ai", c10: "manual", c11: "ai", c12: "ai", c13: "ai", c14: "manual", c15: "manual", c16: "manual" },
+  consent: { at: "2026-09-23T09:05:00.000Z", participants: "Responsable des services généraux", autoBlur: false },
+});
 const SEED_AUDITS = () => [
+  AUDIT_42(),
   mkAudit({ id: "a1", ref: "INS-2026-0142", site: "Metalúrgica Norte", city: "Monterrey", country: "Mexique", sector: "Industrie", type: "qualif-indus", date: "2026-09-08", status: "Publié", lang: "es",
     scores: { "Capacité": 84, "Qualité": 66, "HSE": 41, "Traçabilité": 72, "Maintenance": 58, "ESG": 63 }, findings: CASE_FINDINGS.monterrey,
     verdict: "Qualification conditionnelle", summary: "Site à fort potentiel de capacité, mais la sécurité machines est un point bloquant. La qualification est possible sous réserve de la levée du constat critique HSE sous 7 jours et d'un plan SPC sur les cotes critiques.",
@@ -927,7 +976,7 @@ function AuditReport({ id, go }) {
       <a className="btn" href={mail}><Icon n="share" />Partager</a>
       <button className="btn" onClick={() => { try { window.print(); } catch (e) { st.toast("Impression indisponible dans cette vue"); } }}><Icon n="download" />PDF</button>
     </div>
-    {pending > 0 && canEdit && <div className="card card-pad row wrap no-print" style={{ marginBottom: 16, boxShadow: "inset 3px 0 0 var(--bp-red)" }}><Icon n="list" /><div style={{ flex: 1 }}><b>Validation humaine requise.</b> <span className="muted">{pending} constat{pending > 1 ? "s" : ""} proposé{pending > 1 ? "s" : ""} par l'IA à accepter, modifier ou rejeter.</span></div><button className="btn btn-sm" onClick={() => a.findings.filter(f => f.validation === "pending").forEach(f => setF(f.id, { validation: "accepted", validatedBy: st.user.name }))}>Tout accepter</button></div>}
+    {pending > 0 && canEdit && <div className="card card-pad row wrap no-print" style={{ marginBottom: 16, boxShadow: "inset 3px 0 0 var(--bp-red)" }}><Icon n="list" /><div style={{ flex: 1 }}><b>Validation requise.</b> <span className="muted">{pending} constat{pending > 1 ? "s" : ""} proposé{pending > 1 ? "s" : ""} par l'IA à accepter, modifier ou rejeter.</span></div><button className="btn btn-sm" onClick={() => a.findings.filter(f => f.validation === "pending").forEach(f => setF(f.id, { validation: "accepted", validatedBy: st.user.name }))}>Tout accepter</button></div>}
     {a.status === "À valider" && pending === 0 && canEdit && <div className="card card-pad row wrap no-print" style={{ marginBottom: 16 }}><Icon n="check" /><div style={{ flex: 1 }}><b>Tous les constats sont validés.</b> <span className="muted">Vous pouvez publier le rapport au client.</span></div><button className="btn btn-red" onClick={publish}>Publier le rapport</button></div>}
 
     <header style={{ marginBottom: 28 }}>
@@ -1241,9 +1290,12 @@ function VisitHome({ go, onNew, onOpen, onJoin }) {
         <div className="row" style={{ marginTop: 10 }}><button className="btn btn-sm" onClick={() => setShare(last[0])}><Icon n="share" s={14} />Partager</button></div></div>
     </div>}
     <div className="eyebrow" style={{ marginBottom: 10 }}>Reprendre une visite</div>
-    {last.length ? <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))" }}>{last.map(x => <button key={x.id} className="card card-pad" style={{ textAlign: "left" }} onClick={() => onOpen(x.id)}>
-      <div className="h3">{x.name}</div><div className="faint" style={{ fontSize: 13 }}>{x.place || "Lieu non renseigné"} · {frDate(x.date)}</div>
-      <div className="row mono" style={{ fontSize: 12, marginTop: 10, gap: 14 }}><span>{x.photos.length} photos</span><span>{x.recordings.length} enreg.</span>{x.auditId ? <span>Classée</span> : x.pendingAnalysis ? <span style={{ color: "var(--bp-red)" }}>Analyse en attente</span> : null}</div></button>)}</div>
+    {last.length ? <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))" }}>{last.map(x => <div key={x.id} className="card card-pad" style={{ position: "relative" }}>
+      <button style={{ textAlign: "left", border: 0, background: "none", padding: 0, width: "100%", cursor: "pointer", color: "inherit", font: "inherit" }} onClick={() => onOpen(x.id)}>
+        <div className="h3" style={{ paddingRight: 36 }}>{x.name}</div><div className="faint" style={{ fontSize: 13 }}>{x.place || "Lieu non renseigné"} · {frDate(x.date)}</div>
+        <div className="row mono" style={{ fontSize: 12, marginTop: 10, gap: 14 }}><span>{x.photos.length} photos</span><span>{x.recordings.length} enreg.</span>{x.auditId ? <span>Classée</span> : x.pendingAnalysis ? <span style={{ color: "var(--bp-red)" }}>Analyse en attente</span> : null}</div></button>
+      <button className="icon-btn" title="Supprimer la visite" style={{ position: "absolute", top: 8, right: 8 }} onClick={() => { if (confirm(`Supprimer la visite « ${x.name} » ?\n${x.photos.length} photo(s) et ${x.recordings.length} enregistrement(s) seront perdus${x.auditId ? " (le rapport d'audit classé est conservé)" : ""}.`)) { st.removeVisit(x.id); st.toast("Visite supprimée"); } }}><Icon n="trash" s={15} /></button>
+    </div>)}</div>
       : <div className="card empty">Aucune visite sur cet appareil.</div>}
     {share && <ShareSheet v={share} onClose={() => setShare(null)} />}
   </div>;
@@ -1765,7 +1817,7 @@ function App() {
   useEffect(() => { (async () => {
     const [a, v, p, types] = await Promise.all([storage.get("audits"), storage.get("visits"), storage.get("practices"), storage.get("types")]);
     if (types) Object.assign(AUDIT_TYPES, types);
-    setAudits(a || SEED_AUDITS()); setVisits(v || []); if (p) setPractices(p);
+    setAudits(a ? (a.some(x => x.id === "a42") ? a : [AUDIT_42(), ...a]) : SEED_AUDITS()); setVisits(v || []); if (p) setPractices(p);
   })(); }, []);
   useEffect(() => { if (audits) storage.set("audits", audits); }, [audits]);
   useEffect(() => { storage.set("visits", visits); }, [visits]);
@@ -1780,6 +1832,7 @@ function App() {
     updateAudit: (id, fn) => setAudits(l => l.map(a => a.id === id ? fn(a) : a)),
     upsertAudit: (a) => setAudits(l => [a, ...l.filter(x => x.id !== a.id)]),
     addVisit: (v) => setVisits(l => [v, ...l]),
+    removeVisit: (id) => setVisits(l => l.filter(v => v.id !== id)),
     updateVisit: (id, fn) => setVisits(l => l.map(v => v.id === id ? fn(v) : v)),
     addPractice: (p) => setPractices(l => [{ id: uid(), ...p }, ...l]),
     addType: (k, t) => { AUDIT_TYPES[k] = t; storage.get("types").then(x => storage.set("types", { ...(x || {}), [k]: t })); force(n => n + 1); },
