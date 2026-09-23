@@ -347,6 +347,7 @@ Object.values(AUDIT_TYPES).forEach(t => { t.items = t.items.map((it, i) => ({ id
 
 const SECTOR_TYPE = { "Industrie": "qualif-indus", "Électronique": "qualif-indus", "Textile": "smeta", "Agroalimentaire": "mdd-agro", "Chimie": "esg", "Public": "securite-erp" };
 const SECTORS = ["Entrepôt", "Boutique", "Usine", "Atelier", "Public"];
+const SPOKEN = ["fr", "en", "es", "ar"];
 const CLIENT_ORG = "Maison Valcourt";
 const USERS = {
   consultant: { name: "Xavier Tinel", org: "BearingPoint", initials: "XT", role: "consultant", roleLabel: "Consultant" },
@@ -594,7 +595,7 @@ Réponds UNIQUEMENT en JSON :
     return `Grille d'audit (id | point) :\n${type.items.map(i => `${i.id} | ${i.label}`).join("\n")}\n\nExtrait de transcription de visite :\n${lines.map(l => l.text).join("\n")}\n\nQuels points de la grille sont abordés, même partiellement, dans cet extrait ? Réponds UNIQUEMENT en JSON : {"covered":["c0","c3"]}`;
   },
   translate(lines, lang) {
-    const L = { fr: "français", en: "anglais", es: "espagnol" }[lang];
+    const L = { fr: "français", en: "anglais", es: "espagnol", ar: "arabe (standard moderne)" }[lang];
     return `Traduis chaque ligne en ${L}, fidèlement, sans rien ajouter. Réponds UNIQUEMENT en JSON : {"lines":["..."]} avec exactement ${lines.length} éléments dans le même ordre.\n\n${lines.map((l, i) => `${i + 1}. ${l.text}`).join("\n")}`;
   },
   sections(lines) {
@@ -617,7 +618,7 @@ Transcription : ${(audit.transcript || []).map(l => `${fmt(l[0])} ${l[1]}`).join
 /* ---------- speech : reconnaissance vocale navigateur, sinon script démo ---------- */
 function createSpeech(lang, onLine, onPartial) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const code = { fr: "fr-FR", en: "en-US", es: "es-ES" }[lang] || navigator.language || "fr-FR";
+  const code = { fr: "fr-FR", en: "en-US", es: "es-ES", ar: "ar-SA" }[lang] || navigator.language || "fr-FR";
   let rec = null, running = false, demoTimer = null, demoIdx = 0, mode = "demo";
   function startDemo() {
     mode = "demo";
@@ -1110,7 +1111,7 @@ function VisitPlayback({ audit: a }) {
   const st = useStore(); const wide = useWide(1000);
   const lines = useMemo(() => (a.transcript || []).map(l => ({ t: l[0], text: l[1] })), [a.transcript]);
   const photos = a.photos || [];
-  const base = ["fr", "en", "es"].includes(a.lang) ? a.lang : "fr";
+  const base = SPOKEN.includes(a.lang) ? a.lang : "fr";
   const [lang, setLang] = useState(base); const [cur, setCur] = useState(0); const [playing, setPlaying] = useState(false); const [busy, setBusy] = useState(false); const [tab, setTab] = useState("transcript");
   const total = Math.max(lines.at(-1)?.t + 45 || 60, 60);
   const trace = useMemo(() => (a.trace?.length ? a.trace : synthTrace(a)), [a.id]);
@@ -1155,7 +1156,7 @@ function VisitPlayback({ audit: a }) {
         {secs.map(x => <button key={x.t} onClick={() => setCur(x.t)} style={{ display: "flex", alignItems: "baseline", gap: 10, width: "100%", border: 0, background: "none", textAlign: "left", padding: i ? "18px 8px 6px" : "4px 8px 6px", borderTop: i ? "1px solid var(--border-soft)" : 0, marginTop: i ? 8 : 0 }}>
           <span className="mono" style={{ fontSize: 11, color: "var(--bp-red)" }}>{String(sections.indexOf(x) + 1).padStart(2, "0")}</span><span className="h3">{secLabel(x)}</span><span className="mono faint" style={{ fontSize: 11 }}>{fmt(x.t)}</span></button>)}
         {ph.map(p => <img key={p.id} src={p.src} style={{ width: 140, height: 94, objectFit: "cover", margin: "6px 8px 6px 54px", display: "block" }} />)}
-        <div className={"tr-line" + (curLine === l ? " cur" : "")} onClick={() => jump(l.t)}><span className="tc">{fmt(l.t)}</span><span>{tr ? (tr[i] || l.text) : l.text}</span></div>
+        <div className={"tr-line" + (curLine === l ? " cur" : "")} onClick={() => jump(l.t)}><span className="tc">{fmt(l.t)}</span><span dir={lang === "ar" ? "rtl" : undefined} style={lang === "ar" ? { textAlign: "right", flex: 1 } : null}>{tr ? (tr[i] || l.text) : l.text}</span></div>
       </React.Fragment>; })}
     {photos.filter(p => p.t > (lines.at(-1)?.t ?? 0)).map(p => <img key={p.id} src={p.src} style={{ width: 140, height: 94, objectFit: "cover", margin: "6px 8px 6px 54px", display: "block" }} />)}
   </div>;
@@ -1167,7 +1168,7 @@ function VisitPlayback({ audit: a }) {
         <span className="mono" style={{ fontSize: 13 }}>{fmt(cur)} / {fmt(total)}</span>
         <div className="spacer" />
         <span className="faint" style={{ fontSize: 12 }}>Langue</span>
-        <div className="seg">{["fr", "en", "es"].map(k => <button key={k} className={lang === k ? "on" : ""} style={lang === k ? { background: "var(--bp-red)", color: "#fff" } : null} onClick={() => setLang(k)}>{k.toUpperCase()}</button>)}</div>
+        <div className="seg">{SPOKEN.map(k => <button key={k} className={lang === k ? "on" : ""} style={lang === k ? { background: "var(--bp-red)", color: "#fff" } : null} onClick={() => setLang(k)}>{k.toUpperCase()}</button>)}</div>
         {busy && <span className="spinner" />}
       </div>
       <audio ref={audioRef} hidden onTimeUpdate={e => { const r = (a.recordings || []).find(x => x.id === e.target.dataset.rec); if (r && playing) setCur(r.offset + e.target.currentTime); }} onEnded={() => { const r = (a.recordings || []).find(x => x.id === audioRef.current?.dataset.rec); if (r) jump(r.offset + r.duration + .01); }} />
@@ -1246,7 +1247,7 @@ function ChatDrawer({ audit, onClose }) {
    APP DE VISITE · mobile d'abord, hors ligne (IndexedDB)
    Écrans : accueil → formulaire → consentement RGPD → capture → synthèse
    ========================================================================= */
-const LANGS = { auto: "Détection auto", fr: "Français", en: "Anglais", es: "Espagnol" };
+const LANGS = { auto: "Détection auto", fr: "Français", en: "Anglais", es: "Espagnol", ar: "Arabe" };
 const serverInfo = fetch("/api/info").then(r => r.json()).catch(() => ({}));
 function newVisit(p) {
   return { id: uid(), code: shareCode(), name: "", site: "", date: today(), place: "", gps: null, lang: "fr", type: "qualif-indus", sector: "Usine", team: [], consent: null,
@@ -1335,7 +1336,7 @@ function Join({ initial, onBack, onJoin }) {
 
 function VisitForm({ onBack, onCreate }) {
   const st = useStore(); const pre = window.__prefill;
-  const [v, setV] = useState(() => newVisit(pre ? { name: "Audit de suivi · " + pre.site, site: pre.site, place: pre.city + ", " + pre.country, type: pre.type, followup: pre.id, lang: ["fr", "en", "es"].includes(pre.lang) ? pre.lang : "en" } : {}));
+  const [v, setV] = useState(() => newVisit(pre ? { name: "Audit de suivi · " + pre.site, site: pre.site, place: pre.city + ", " + pre.country, type: pre.type, followup: pre.id, lang: SPOKEN.includes(pre.lang) ? pre.lang : "en" } : {}));
   const [locMode, setLocMode] = useState(pre ? "manual" : "gps"); const [gpsState, setGpsState] = useState(""); const planRef = useRef(null);
   const [genOpen, setGenOpen] = useState(false);
   const s = (k) => (e) => setV({ ...v, [k]: e.target.value });
@@ -1392,11 +1393,11 @@ function GridGenerator({ onClose, onCreated }) {
 
 function Consent({ v, onBack, onOk }) {
   const [who, setWho] = useState(""); const [ok, setOk] = useState(false); const [blur, setBlur] = useState(v.type === "smeta");
-  const text = { fr: "Cette visite est enregistrée (audio et photos) pour produire le rapport d'audit. Les données sont conservées 3 ans, accessibles au client commanditaire et à BearingPoint. Vous pouvez demander l'arrêt de l'enregistrement à tout moment.", en: "This visit is recorded (audio and photos) to produce the audit report. Data is kept for 3 years and shared with the commissioning client and BearingPoint. You may ask to stop the recording at any time.", es: "Esta visita se graba (audio y fotos) para elaborar el informe de auditoría. Los datos se conservan 3 años y se comparten con el cliente y BearingPoint. Puede pedir que se detenga la grabación en cualquier momento." };
+  const text = { fr: "Cette visite est enregistrée (audio et photos) pour produire le rapport d'audit. Les données sont conservées 3 ans, accessibles au client commanditaire et à BearingPoint. Vous pouvez demander l'arrêt de l'enregistrement à tout moment.", en: "This visit is recorded (audio and photos) to produce the audit report. Data is kept for 3 years and shared with the commissioning client and BearingPoint. You may ask to stop the recording at any time.", es: "Esta visita se graba (audio y fotos) para elaborar el informe de auditoría. Los datos se conservan 3 años y se comparten con el cliente y BearingPoint. Puede pedir que se detenga la grabación en cualquier momento.", ar: "يتم تسجيل هذه الزيارة (صوت وصور) لإعداد تقرير التدقيق. تُحفظ البيانات لمدة 3 سنوات ويطّلع عليها العميل وبيرينغ بوينت. يمكنكم طلب إيقاف التسجيل في أي وقت." };
   return <div className="visit"><VTop onBack={onBack} title="Consentement" sub={v.name} />
     <div className="v-center"><div style={{ width: "100%", maxWidth: 520 }} className="grid">
       <div className="row"><Icon n="shield" s={26} /><div><div className="eyebrow">RGPD</div><div className="h2">Informer les personnes enregistrées</div></div></div>
-      <div className="card card-pad"><div className="eyebrow" style={{ marginBottom: 8 }}>Message à lire ou montrer · {LANGS[v.lang]}</div><p style={{ margin: 0, fontSize: 16 }}>{text[v.lang] || text.fr}</p>{v.lang !== "fr" && text[v.lang] && <p className="faint" style={{ fontSize: 13, marginBottom: 0 }}>{text.fr}</p>}</div>
+      <div className="card card-pad"><div className="eyebrow" style={{ marginBottom: 8 }}>Message à lire ou montrer · {LANGS[v.lang]}</div><p style={{ margin: 0, fontSize: 16 }} dir={v.lang === "ar" ? "rtl" : undefined}>{text[v.lang] || text.fr}</p>{v.lang !== "fr" && text[v.lang] && <p className="faint" style={{ fontSize: 13, marginBottom: 0 }}>{text.fr}</p>}</div>
       <div className="field"><label>Personnes présentes (noms ou fonctions)</label><input className="input" value={who} onChange={e => setWho(e.target.value)} placeholder="Ex. Directeur de site, responsable qualité" /></div>
       <label className="row" style={{ fontSize: 14, cursor: "pointer" }}><input type="checkbox" checked={blur} onChange={e => setBlur(e.target.checked)} />Flouter automatiquement les visages sur les photos</label>
       <label className="row" style={{ fontSize: 14, cursor: "pointer", alignItems: "flex-start" }}><input type="checkbox" checked={ok} onChange={e => setOk(e.target.checked)} style={{ marginTop: 4 }} />Les personnes présentes ont été informées et ont donné leur accord oral. L'heure et la liste sont enregistrées dans le rapport.</label>
@@ -1513,7 +1514,7 @@ function Capture({ v, save, onBack, onSynth }) {
         const d = await r.json(); if (!r.ok) throw new Error(d.error || r.statusText);
         const segs2 = d.segments?.length ? d.segments : splitSentences(d.text || "").map((text, i, a) => ({ start: i * rec.duration / a.length, text }));
         const lines = segs2.filter(s => s.text?.trim()).map(s => ({ t: rec.offset + s.start, text: s.text.trim(), rec: rec.id }));
-        const det = (d.language || "").slice(0, 2).toLowerCase(); const newLang = ["fr", "en", "es"].includes(det) ? det : null;
+        const det = (d.language || "").slice(0, 2).toLowerCase(); const newLang = SPOKEN.includes(det) ? det : null;
         save(x => ({ ...x, lines: [...x.lines.filter(l => l.rec !== rec.id), ...lines].sort((a, b) => a.t - b.t), lang: x.lang === "auto" && newLang ? newLang : x.lang }));
         st.toast("Transcription terminée" + (newLang ? " · langue détectée : " + LANGS[newLang] : ""));
       } catch (e) { st.toast("Transcription serveur impossible : " + e.message); }
@@ -1651,7 +1652,7 @@ function RecDetail({ v, r, save, onClose }) {
 const STEPS = ["Consolidation des matériaux", "Transcription et traduction", "Vision sur les photos", "Extraction des constats", "Notation par domaine", "Plan d'actions"];
 function Synthesis({ v, save, onBack, go }) {
   const st = useStore(); const t = AUDIT_TYPES[v.type] || AUDIT_TYPES["qualif-indus"]; const online = useOnline();
-  const vLang = ["fr", "en", "es"].includes(v.lang) ? v.lang : "fr";
+  const vLang = SPOKEN.includes(v.lang) ? v.lang : "fr";
   const [tab, setTab] = useState("report"); const [lang, setLang] = useState(vLang);
   const [sel, setSel] = useState("all"); const [cur, setCur] = useState(0); const [playing, setPlaying] = useState(false);
   const [busy, setBusy] = useState(null); const [step, setStep] = useState(0); const [err, setErr] = useState(""); const [trBusy, setTrBusy] = useState(false);
@@ -1738,7 +1739,7 @@ ${v.photos.length ? `<h2>Photos</h2>${v.photos.map(p => `<img src="${p.src}" alt
     <div className="row wrap"><button className="icon-btn" style={{ border: "1px solid var(--border)" }} onClick={() => setPlaying(!playing)}><Icon n={playing ? "pause" : "play"} s={16} /></button>
       <span className="mono" style={{ fontSize: 13 }}>{fmt(cur)} / {fmt(range[1])}</span><div className="spacer" />
       <select className="input" style={{ width: 220, height: 34 }} value={sel} onChange={e => setSel(e.target.value)}><option value="all">Tous les enregistrements</option>{v.recordings.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select>
-      <div className="seg">{["fr", "en", "es"].map(k => <button key={k} className={lang === k ? "on" : ""} style={lang === k ? { background: "var(--bp-red)", color: "#fff" } : null} onClick={() => setLang(k)}>{k.toUpperCase()}</button>)}</div>{trBusy && <span className="spinner" />}
+      <div className="seg">{SPOKEN.map(k => <button key={k} className={lang === k ? "on" : ""} style={lang === k ? { background: "var(--bp-red)", color: "#fff" } : null} onClick={() => setLang(k)}>{k.toUpperCase()}</button>)}</div>{trBusy && <span className="spinner" />}
       <button className="btn btn-sm" onClick={downloadReport} title="Télécharger la synthèse"><Icon n="download" s={15} />Télécharger</button></div>
     <audio ref={audioRef} hidden onTimeUpdate={e => { const r = v.recordings.find(x => x.id === e.target.dataset.rec); if (r && playing) setCur(r.offset + e.target.currentTime); }} onEnded={() => { const r = v.recordings.find(x => x.id === audioRef.current?.dataset.rec); if (r) jump(r.offset + r.duration + .01); }} />
     <div className="tl" style={{ marginTop: 10 }} onClick={e => { const r = e.currentTarget.getBoundingClientRect(); jump(range[0] + (e.clientX - r.left) / r.width * (range[1] - range[0])); }}>
@@ -1764,7 +1765,7 @@ ${v.photos.length ? `<h2>Photos</h2>${v.photos.map(p => `<img src="${p.src}" alt
           <button className="icon-btn" title="Supprimer" onClick={() => removeSec(sec)}><Icon n="trash" s={14} /></button>
         </div>}
         {ph.map(p => <img key={p.id} src={p.src} style={{ width: 120, height: 80, objectFit: "cover", margin: "4px 8px 4px 62px", display: "block" }} />)}
-        <div className={"tr-line" + (curLine === l ? " cur" : "")} onClick={() => jump(l.t)}><span className="tc">{fmt(l.t)}</span><span>{txt(l)}</span></div></React.Fragment>; })}
+        <div className={"tr-line" + (curLine === l ? " cur" : "")} onClick={() => jump(l.t)}><span className="tc">{fmt(l.t)}</span><span dir={lang === "ar" ? "rtl" : undefined} style={lang === "ar" ? { textAlign: "right", flex: 1 } : null}>{txt(l)}</span></div></React.Fragment>; })}
     {!lines.length && <div className="empty">Pas encore de transcription.</div>}
   </div>;
   const Plan = v.plan ? <PlanImageView plan={v.plan} sections={secs} secName={secName} cur={cur} onSeek={jump} editable selected={selSec} onSelect={setSelSec} onPlace={placeSec} onRename={renameSec} />
