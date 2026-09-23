@@ -1307,16 +1307,33 @@ function VisitHome({ go, onNew, onOpen, onJoin }) {
   </div>;
 }
 
+/* Relais photos mobile : URL Netlify configurée, sinon le serveur local sur le Wi-Fi. */
+async function relayInfo() {
+  const custom = (ls.get("insp.relay", "") || "").replace(/\/$/, "");
+  if (custom) return { base: custom, page: custom + "/", kind: "netlify" };
+  const info = await serverInfo; const lan = (info.lanUrl || (location.protocol.startsWith("http") && !window.claude ? location.origin : "")).replace(/\/$/, "");
+  return lan ? { base: lan, page: lan + "/mobile", kind: "lan" } : null;
+}
+const mobileLink = (r, code) => r ? `${r.page}?code=${code}&api=${encodeURIComponent(r.base)}` : "";
+function useRelay() { const [r, setR] = useState(null); const [tick, setTick] = useState(0); useEffect(() => { relayInfo().then(setR); }, [tick]); return [r, () => setTick(t => t + 1)]; }
+
 function ShareSheet({ v, onClose }) {
   const st = useStore(); const link = location.href.split("#")[0] + "#/visit?join=" + v.code;
-  return <Modal onClose={onClose}><div className="row between"><div className="h2">Inviter un collègue</div><button className="icon-btn" onClick={onClose}><Icon n="x" /></button></div>
-    <div className="row wrap" style={{ gap: 20, marginTop: 16, alignItems: "flex-start" }}><QR text={link} size={160} />
-      <div style={{ flex: 1, minWidth: 200 }}><div className="eyebrow">Code</div><div className="mono" style={{ fontSize: 32, letterSpacing: ".2em", fontWeight: 600 }}>{v.code}</div>
-        <input className="input mono" style={{ fontSize: 12, marginTop: 10 }} readOnly value={link} onFocus={e => e.target.select()} />
-        <button className="btn btn-sm" style={{ marginTop: 8 }} onClick={() => { navigator.clipboard?.writeText(link).then(() => st.toast("Lien copié"), () => st.toast("Copie impossible")); }}><Icon n="link" s={14} />Copier le lien</button></div></div>
+  const [relay, refresh] = useRelay(); const [edit, setEdit] = useState(false); const [url, setUrl] = useState(ls.get("insp.relay", "") || "");
+  const mlink = mobileLink(relay, v.code);
+  return <Modal onClose={onClose}><div className="row between"><div className="h2">Téléphone et collègues</div><button className="icon-btn" onClick={onClose}><Icon n="x" /></button></div>
+    <div className="row wrap" style={{ gap: 20, marginTop: 16, alignItems: "flex-start" }}>{mlink ? <QR text={mlink} size={170} /> : <div className="card" style={{ width: 170, height: 170, display: "grid", placeItems: "center", fontSize: 12, textAlign: "center", padding: 12 }} >Relais indisponible : renseignez l'URL Netlify ci-dessous</div>}
+      <div style={{ flex: 1, minWidth: 220 }}><div className="eyebrow">Code de la visite</div><div className="mono" style={{ fontSize: 32, letterSpacing: ".2em", fontWeight: 600 }}>{v.code}</div>
+        <p style={{ fontSize: 14, margin: "8px 0" }}><b>Scannez avec le téléphone</b> : une page s'ouvre pour prendre des photos, elles arrivent dans cette visite en quelques secondes.</p>
+        {mlink && <input className="input mono" style={{ fontSize: 12 }} readOnly value={mlink} onFocus={e => e.target.select()} />}
+        <div className="row wrap" style={{ marginTop: 8 }}>{mlink && <button className="btn btn-sm" onClick={() => { navigator.clipboard?.writeText(mlink).then(() => st.toast("Lien copié"), () => st.toast("Copie impossible")); }}><Icon n="link" s={14} />Copier</button>}
+          <button className="btn btn-sm btn-ghost" onClick={() => setEdit(!edit)}><Icon n="edit" s={14} />{relay?.kind === "netlify" ? "Relais : Netlify" : relay ? "Relais : Wi-Fi local" : "Configurer le relais"}</button></div>
+        {edit && <div className="grid" style={{ gap: 6, marginTop: 8 }}><input className="input" placeholder="https://votre-site.netlify.app" value={url} onChange={e => setUrl(e.target.value)} />
+          <div className="row"><button className="btn btn-sm btn-dark" onClick={() => { ls.set("insp.relay", url.trim()); setEdit(false); refresh(); st.toast(url.trim() ? "Relais enregistré" : "Relais local"); }}>Enregistrer</button><span className="faint" style={{ fontSize: 12 }}>Vide = serveur local (téléphone sur le même Wi-Fi).</span></div></div>}
+      </div></div>
+    <div className="divider" /><div className="row wrap between"><div><div className="eyebrow">Rejoindre la visite depuis un autre poste</div><input className="input mono" style={{ fontSize: 12, marginTop: 6, width: 360, maxWidth: "100%" }} readOnly value={link} onFocus={e => e.target.select()} /></div></div>
     <div className="divider" /><div className="eyebrow" style={{ marginBottom: 8 }}>Participants</div>
-    <div className="row wrap">{(v.team.length ? v.team : [st.user.name]).map(n => <div key={n} className="row" style={{ gap: 8 }}><div className="avatar" style={{ width: 28, height: 28, fontSize: 11 }}>{n.split(" ").map(s => s[0]).join("").slice(0, 2)}</div><span style={{ fontSize: 14 }}>{n}</span></div>)}</div>
-    <p className="faint" style={{ fontSize: 12 }}>Métadonnées partagées (nom, lieu, date, équipe). Synchronisation des médias : prévue dans la version industrialisée.</p></Modal>;
+    <div className="row wrap">{(v.team.length ? v.team : [st.user.name]).map(n => <div key={n} className="row" style={{ gap: 8 }}><div className="avatar" style={{ width: 28, height: 28, fontSize: 11 }}>{n.split(" ").map(s => s[0]).join("").slice(0, 2)}</div><span style={{ fontSize: 14 }}>{n}</span></div>)}</div></Modal>;
 }
 
 function Join({ initial, onBack, onJoin }) {
@@ -1546,6 +1563,29 @@ function Capture({ v, save, onBack, onSynth }) {
     st.toast(files.length > 1 ? files.length + " photos ajoutées" : "Photo ajoutée");
   }
   useEffect(() => () => { speech.current?.stop(); media.current.stream?.getTracks().forEach(x => x.stop()); }, []);
+  // photos envoyées depuis le téléphone (QR code) : on interroge le relais toutes les 4 s
+  const [mobileState, setMobileState] = useState(""); const mobileSince = useRef(0);
+  useEffect(() => {
+    let stop = false, timer;
+    const poll = async () => {
+      const r = await relayInfo(); if (!r || stop) { setMobileState(""); return; }
+      try {
+        const res = await fetch(`${r.base}/api/mobile/${v.code}/photos?since=${mobileSince.current}`, { cache: "no-store" }); if (!res.ok) throw new Error(res.status);
+        const d = await res.json(); const known = new Set(vRef.current.photos.map(p => p.id));
+        const fresh = (d.photos || []).filter(p => !known.has(p.id));
+        if (fresh.length) {
+          const last = vRef.current.trace.at(-1); const tt = baseT + elapsedOf(segsRef.current);
+          const add = fresh.map((p, i) => ({ id: p.id, name: p.note ? p.note : p.name || ("Photo mobile " + (vRef.current.photos.length + i + 1)), src: p.src, at: p.at || Date.now(), t: tt, recState: state, pos: last ? { lat: last.lat, lng: last.lng } : v.gps, fromMobile: true }));
+          save(x => ({ ...x, photos: [...x.photos, ...add.filter(a => !x.photos.some(q => q.id === a.id))] }));
+          st.toast(fresh.length > 1 ? fresh.length + " photos reçues du téléphone" : "Photo reçue du téléphone");
+        }
+        mobileSince.current = Math.max(mobileSince.current, ...(d.photos || []).map(p => p.received || 0));
+        setMobileState(r.kind === "netlify" ? "Téléphone : relais Netlify" : "Téléphone : Wi-Fi local");
+      } catch (e) { setMobileState("Téléphone : relais injoignable"); }
+    };
+    poll(); timer = setInterval(poll, 4000);
+    return () => { stop = true; clearInterval(timer); };
+  }, [v.code]);
   const toggleCheck = (id) => save(x => { const c = { ...x.checklist }; if (c[id]) delete c[id]; else c[id] = "manual"; return { ...x, checklist: c }; });
   const covered = Object.keys(v.checklist).length;
   const byDomain = t.domains.map(d => ({ d, items: t.items.filter(i => i.domain === d) }));
@@ -1555,7 +1595,10 @@ function Capture({ v, save, onBack, onSynth }) {
       <div className="seg">{[["grid", "Grille " + covered + "/" + t.items.length], ["log", "Journal"]].map(([k, l]) => <button key={k} className={aside === k ? "on" : ""} onClick={() => setAside(k)}>{l}</button>)}</div>
       <div className="spacer" />{asideMobile && <button className="icon-btn" onClick={() => setAsideMobile(false)}><Icon n="x" /></button>}</div>
     {aside === "grid" ? <div>
-      <div className="faint" style={{ fontSize: 12, padding: "12px 16px 4px" }}>Case rouge : abordé selon l'IA, d'après la transcription. Case noire : coché par vous. Les domaines à 0 sont signalés avant de quitter le site.</div>
+      <div className="faint" style={{ fontSize: 12, padding: "12px 16px 4px", lineHeight: 1.7 }}>
+        <span className="chk-box ai" style={{ display: "inline-grid", verticalAlign: "middle", marginRight: 6 }}><Icon n="check" s={12} w={3} /></span>Abordé selon l'IA, d'après la transcription.<br />
+        <span className="chk-box on" style={{ display: "inline-grid", verticalAlign: "middle", marginRight: 6 }}><Icon n="check" s={12} w={3} /></span>Coché par vous.<br />
+        Les domaines à 0 sont signalés avant de quitter le site.</div>
       {followActs.length > 0 && <><div className="eyebrow" style={{ padding: "14px 16px 6px" }}>Actions à vérifier</div>{followActs.map(a => { const k = "act:" + a.id; return <div key={k} className="chk-item" onClick={() => toggleCheck(k)}><div className={"chk-box" + (v.checklist[k] ? " on" : "")}>{v.checklist[k] && <Icon n="check" s={12} w={3} />}</div><div><span className="mono faint" style={{ fontSize: 11 }}>{a.id}</span><div>{a.label}</div></div></div>; })}</>}
       {byDomain.map(({ d, items }) => { const n = items.filter(i => v.checklist[i.id]).length; return <div key={d}>
         <div className="row between" style={{ padding: "14px 16px 6px" }}><span className="eyebrow">{d}</span><span className="mono" style={{ fontSize: 11, color: n === 0 ? "var(--bp-red)" : "var(--text-3)" }}>{n}/{items.length}</span></div>
@@ -1584,12 +1627,13 @@ function Capture({ v, save, onBack, onSynth }) {
           <button className={"v-tool" + (gpsOn ? " on" : "")} onClick={() => setGpsOn(!gpsOn)}><Icon n="pin" />GPS{gpsOn ? " actif" : ""}</button>
           <button className="v-tool" onClick={() => setSheet("camera")}><Icon n="cam" />Photo</button>
           <button className="v-tool" onClick={() => docRef.current?.click()}><Icon n="report" />Document</button>
-          <button className="v-tool" onClick={() => setSheet("media")}><Icon n="img" />Médias{v.photos.length + v.recordings.length > 0 && <span className="badge">{v.photos.length + v.recordings.length}</span>}</button>
+          <button className="v-tool" title="Médias" aria-label="Médias" onClick={() => setSheet("media")}><Icon n="img" />{v.photos.length + v.recordings.length > 0 ? <span className="badge">{v.photos.length + v.recordings.length}</span> : <span className="mono" style={{ fontSize: 10 }}>0</span>}</button>
           <button className="v-tool" onClick={() => { setAside("grid"); setAsideMobile(true); }}><Icon n="list" />Grille<span className="mono" style={{ fontSize: 10 }}>{covered}/{t.items.length}</span></button>
         </div>
         <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={e => { addPhotos([...e.target.files]); e.target.value = ""; }} />
         <input ref={docRef} type="file" accept=".pdf,.docx,.txt,.md" multiple hidden onChange={e => { addDocs([...e.target.files]); e.target.value = ""; }} />
         {transcribing && <div className="row mono faint" style={{ fontSize: 12, marginTop: 12 }}><span className="spinner" style={{ width: 12, height: 12 }} />Transcription et détection de la langue…</div>}
+        {mobileState && <button className="mono faint" style={{ fontSize: 11, marginTop: 10, border: 0, background: "none", cursor: "pointer" }} onClick={() => setSheet("share")}><span style={{ display: "inline-block", width: 7, height: 7, borderRadius: 4, background: mobileState.includes("injoignable") ? "var(--bp-red)" : "var(--sev-pos)", marginRight: 6 }} />{mobileState} · code {v.code}</button>}
         {state !== "idle" && <div className="mono faint" style={{ fontSize: 11, marginTop: 12 }}>Les photos seront liées à {state === "rec" ? "REC " + fmt(baseT + elapsed) : "la position EN PAUSE"}</div>}
       </div>
       {Aside}

@@ -1,6 +1,11 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
+
+const mobilePhotos = new Map(); // code -> [{id, name, note, src, at, received}]
+const lanIp = () => { for (const l of Object.values(os.networkInterfaces())) for (const a of l || []) if (a.family === "IPv4" && !a.internal && !a.address.startsWith("169.254")) return a.address; return "localhost"; };
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "content-type" };
 
 const PORT = process.env.PORT || 3000;
 const KEY = process.env.ANTHROPIC_API_KEY || process.env.MISTRAL_API_KEY;
@@ -24,7 +29,7 @@ function readBody(req, limit = 40 * 1024 * 1024) {
   });
 }
 function json(res, status, obj) {
-  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
+  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", ...CORS });
   res.end(JSON.stringify(obj));
 }
 function apiError(r, data) {
@@ -102,7 +107,25 @@ http.createServer(async (req, res) => {
       const q = new URL(req.url, "http://x").searchParams;
       return json(res, 200, await transcribe(await readBody(req), req.headers["content-type"], q.get("lang")));
     }
-    if (req.method === "GET" && req.url === "/api/info") return json(res, 200, { provider: PROVIDER, transcribe: PROVIDER === "mistral" });
+    if (req.method === "OPTIONS") { res.writeHead(204, CORS); return res.end(); }
+    if (req.method === "GET" && req.url === "/api/info") return json(res, 200, { provider: PROVIDER, transcribe: PROVIDER === "mistral", lanUrl: `http://${lanIp()}:${PORT}`, mobile: true });
+    const mob = req.url.match(/^\/api\/mobile\/([A-Za-z0-9]{6})\/photos\/?(\?.*)?$/);
+    if (mob) {
+      const code = mob[1].toUpperCase(); const list = mobilePhotos.get(code) || [];
+      if (req.method === "POST") {
+        const p = JSON.parse((await readBody(req)).toString("utf8"));
+        if (!p?.id || !p?.src) return json(res, 400, { error: "photo invalide" });
+        const photo = { id: String(p.id), name: String(p.name || "Photo mobile"), note: String(p.note || ""), src: p.src, at: Number(p.at) || Date.now(), received: Date.now() };
+        list.push(photo); mobilePhotos.set(code, list); console.log(`[mobile ${code}] photo recue (${list.length})`);
+        return json(res, 200, { ok: true, id: photo.id });
+      }
+      const q = new URL(req.url, "http://x").searchParams; const since = Number(q.get("since") || 0);
+      return json(res, 200, { count: list.length, photos: q.get("meta") === "1" ? [] : list.filter(x => x.received > since) });
+    }
+    if (req.method === "GET" && (req.url === "/mobile" || req.url.startsWith("/mobile/") || req.url.startsWith("/mobile?"))) {
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      return fs.createReadStream(path.join(__dirname, "mobile", "index.html")).pipe(res);
+    }
     if (req.method === "GET" && req.url.startsWith("/demo/")) {
       const f = path.join(__dirname, "demo", path.basename(decodeURIComponent(req.url.slice(6).split("?")[0])));
       if (!fs.existsSync(f)) return json(res, 404, { error: "not found" });
@@ -120,4 +143,4 @@ http.createServer(async (req, res) => {
     console.error(e.message + cause);
     json(res, e.status || 500, { error: e.message + cause, code: e.code || "server_error" });
   }
-}).listen(PORT, () => console.log(`Inspecto sur http://localhost:${PORT}  (fournisseur IA : ${PROVIDER}, modeles ${MODELS.quick} / ${MODELS.default})`));
+}).listen(PORT, () => console.log(`Inspecto sur http://localhost:${PORT}  (fournisseur IA : ${PROVIDER}, modeles ${MODELS.quick} / ${MODELS.default})\nPage mobile (meme Wi-Fi) : http://${lanIp()}:${PORT}/mobile`));
