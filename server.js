@@ -39,13 +39,13 @@ http.createServer(async (req, res) => {
       return json(res, 200, await ai.transcribe(await readBody(req), req.headers["content-type"], q.get("lang"), console.log));
     }
     if (req.method === "GET" && req.url === "/api/info") return json(res, 200, { ...ai.info(), lanUrl: `http://${lanIp()}:${PORT}`, mobile: true });
-    const del = req.url.match(/^\/api\/mobile\/([A-Za-z0-9]{6})\/photos\/([\w-]+)\/?$/);
+    const del = req.url.match(/^\/api\/mobile\/([A-Za-z0-9]{4,8})\/photos\/([\w-]+)\/?$/);
     if (del && req.method === "DELETE") {
       const code = del[1].toUpperCase(); const list = (mobilePhotos.get(code) || []).filter(p => p.id !== del[2]);
       mobilePhotos.set(code, list); const d = mobileDeleted.get(code) || []; d.push({ id: del[2], at: Date.now() }); mobileDeleted.set(code, d);
       return json(res, 200, { ok: true });
     }
-    const mob = req.url.match(/^\/api\/mobile\/([A-Za-z0-9]{6})\/photos\/?(\?.*)?$/);
+    const mob = req.url.match(/^\/api\/mobile\/([A-Za-z0-9]{4,8})\/photos\/?(\?.*)?$/);
     if (mob) {
       const code = mob[1].toUpperCase(); const list = mobilePhotos.get(code) || [];
       if (req.method === "POST") {

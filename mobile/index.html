@@ -42,7 +42,7 @@ input.note{width:100%;height:44px;border:1px solid var(--border);border-radius:1
 <main>
   <section class="card" id="codeCard">
     <div class="eyebrow">Code de la visite</div>
-    <div class="codebox"><input id="codeInput" maxlength="6" placeholder="CODE" autocapitalize="characters"><button class="btn" style="flex:0 0 auto;padding:0 16px" id="codeOk">OK</button></div>
+    <div class="codebox"><input id="codeInput" maxlength="8" placeholder="CODE" autocapitalize="characters"><button class="btn" style="flex:0 0 auto;padding:0 16px" id="codeOk">OK</button></div>
     <p class="faint" style="margin:8px 0 0">Scannez le QR code affiché dans Inspecto, ou saisissez le code à 6 caractères.</p>
   </section>
 
@@ -74,8 +74,8 @@ const sent = JSON.parse(localStorage.getItem("insp.mobile.sent") || "[]");
 
 function setStatus(kind, text) { dot.className = "dot " + (kind || ""); statusText.textContent = text; }
 function applyCode(c) {
-  code = c.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
-  if (code.length !== 6) { setStatus("", "Code incomplet"); return; }
+  code = c.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+  if (code.length < 4) { setStatus("", "Code incomplet"); return; }
   localStorage.setItem("insp.mobile.code", code);
   $("codeLabel").textContent = code; $("codeInput").value = code; $("codeCard").classList.add("hidden");
   $("shoot").disabled = false; $("pickBtn").disabled = false;
@@ -131,7 +131,7 @@ $("codeOk").onclick = () => applyCode($("codeInput").value);
 $("codeInput").onkeydown = (e) => { if (e.key === "Enter") applyCode($("codeInput").value); };
 setInterval(() => { for (const p of sent) if (!p.ok && p.src) send(p); }, 8000);
 render();
-if (code.length === 6) applyCode(code); else $("codeInput").focus();
+if (code.length >= 4) applyCode(code); else $("codeInput").focus();
 </script>
 </body>
 </html>

@@ -10,7 +10,7 @@ const json = (status, body) => new Response(JSON.stringify(body), { status, head
 export default async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
   const url = new URL(req.url);
-  const m = url.pathname.match(/\/api\/mobile\/([A-Z0-9]{6})\/photos(?:\/([\w-]+))?\/?$/i);
+  const m = url.pathname.match(/\/api\/mobile\/([A-Z0-9]{4,8})\/photos(?:\/([\w-]+))?\/?$/i);
   if (!m) return json(404, { error: "not found" });
   const code = m[1].toUpperCase(); const photoId = m[2];
   const store = getStore({ name: "inspecto-mobile", consistency: "strong" });

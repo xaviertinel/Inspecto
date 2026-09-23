@@ -526,12 +526,12 @@ const AUDIT_42 = () => mkAudit({ id: "a42", ref: "INS-2026-0151", site: "École 
 });
 /* Visite en cours de démonstration : R+3 de l'école 42, déjà parcourue en partie (plan, chapitres, transcription, cases IA). */
 const VISIT_42 = () => ({
-  id: "v42demo", code: "ECOLE4", name: "Visite École 42 · sécurité R+3", site: "École 42 Paris", date: today(), place: "96 boulevard Bessières, Paris 17e", gps: null, lang: "fr", type: "securite-42", sector: "Public", team: ["Xavier Tinel"],
+  id: "v42demo", code: "ECOLE42", name: "Visite École 42 · sécurité R+3", site: "École 42 Paris", date: today(), place: "96 boulevard Bessières, Paris 17e", gps: null, lang: "fr", type: "securite-42", sector: "Public", team: ["Xavier Tinel"],
   consent: { at: new Date(Date.now() - 3600e3).toISOString(), participants: "Responsable des services généraux, équipe du Bocal", autoBlur: false }, createdAt: Date.now() - 3600e3,
   recordings: [{ id: "r42", name: "Enregistrement 1", segments: [], duration: 300, offset: 0, at: Date.now() - 3600e3, audio: null }],
   lines: [[0, "Visite de sécurité du niveau R+3, école 42, 96 boulevard Bessières. Accompagné du responsable des services généraux."], [8, "Départ du point « Vous êtes ici » près de l'ascenseur nord-ouest. Le plan d'évacuation est affiché, lisible et orienté, légende complète."], [60, "Cage d'escalier nord : les deux issues de secours sont dégagées, barres anti-panique fonctionnelles, portes dans le sens de l'évacuation."], [90, "Blocs d'éclairage de sécurité allumés dans la cage nord, déclencheur manuel d'alarme présent et intact."], [180, "Espace modulaire : pictogrammes d'évacuation visibles au-dessus de chaque issue, cheminements libres, postes des clusters bien rangés."], [240, "Cage d'escalier sud : issue dégagée, barre anti-panique fonctionnelle, palier libre."], [260, "Terrasse jardin : garde-corps périphérique d'environ 1 mètre 10, lisses complètes, fixations saines, sol propre."], [290, "Il reste à contrôler les extincteurs de l'étage, en particulier celui de la régie, et la sécurité de nuit avec l'équipe du Bocal."]].map(([t, text]) => ({ t, text, lang: "fr", rec: "r42" })),
   sections: [{ t: 0, fr: "Entrée et plan d'évacuation", en: "Entrance and evacuation plan", es: "Entrada y plano de evacuación" }, { t: 60, fr: "Cage d'escalier nord", en: "North staircase", es: "Escalera norte" }, { t: 180, fr: "Espace modulaire", en: "Modular space", es: "Espacio modular" }, { t: 240, fr: "Cage d'escalier sud", en: "South staircase", es: "Escalera sur" }, { t: 260, fr: "Terrasse jardin", en: "Garden terrace", es: "Terraza jardín" }],
-  plan: { src: PLAN_42_SRC, name: "Plan d'évacuation R+3", points: { 0: { x: .52, y: .47 }, 60: { x: .7, y: .37 }, 180: { x: .7, y: .65 }, 240: { x: .7, y: .87 }, 260: { x: .4, y: .62 } } }, demoVersion: 3,
+  plan: { src: PLAN_42_SRC, name: "Plan d'évacuation R+3", points: { 0: { x: .52, y: .47 }, 60: { x: .7, y: .37 }, 180: { x: .7, y: .65 }, 240: { x: .7, y: .87 }, 260: { x: .4, y: .62 } } }, demoVersion: 4,
   photos: [], trace: [], translations: {}, analysis: null, auditId: null, pendingAnalysis: false,
   // Tout est vérifié sauf l'extincteur (c1, c2) ; les points de sûreté (c17-c20) seront cochés par l'import du rapport.
   checklist: { c0: "ai", c3: "ai", c4: "ai", c5: "ai", c6: "ai", c7: "ai", c8: "ai", c9: "ai", c10: "ai", c11: "ai", c12: "ai", c13: "ai", c14: "manual", c15: "manual", c16: "manual" },
@@ -1473,8 +1473,8 @@ function Join({ initial, onBack, onJoin }) {
   return <div className="visit"><VTop onBack={onBack} title="Rejoindre une visite" />
     <div className="v-center"><div style={{ width: "100%", maxWidth: 380, marginTop: 30 }}>
       <div className="card" style={{ aspectRatio: "1", display: "grid", placeItems: "center", background: "var(--surface-2)", marginBottom: 20 }}><div style={{ textAlign: "center" }}><Icon n="cam" s={40} w={1.5} /><div className="faint" style={{ fontSize: 13, marginTop: 8 }}>Scannez le QR code avec l'appareil photo<br />du téléphone, ou saisissez le code</div></div></div>
-      <input className="input mono" style={{ height: 56, fontSize: 26, textAlign: "center", letterSpacing: ".3em", textTransform: "uppercase" }} maxLength={6} value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="CODE" />
-      <button className="btn btn-dark" style={{ width: "100%", justifyContent: "center", height: 46, marginTop: 12 }} disabled={code.length !== 6} onClick={join}>Rejoindre</button>
+      <input className="input mono" style={{ height: 56, fontSize: 26, textAlign: "center", letterSpacing: ".3em", textTransform: "uppercase" }} maxLength={8} value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="CODE" />
+      <button className="btn btn-dark" style={{ width: "100%", justifyContent: "center", height: 46, marginTop: 12 }} disabled={code.length < 4} onClick={join}>Rejoindre</button>
     </div></div></div>;
 }
 
@@ -1630,7 +1630,6 @@ function Capture({ v, save, onBack, onSynth }) {
       const ctx = new (window.AudioContext || window.webkitAudioContext)(); const an = ctx.createAnalyser(); an.fftSize = 512; ctx.createMediaStreamSource(stream).connect(an);
       const mr = new MediaRecorder(stream); const chunks = []; mr.ondataavailable = e => chunks.push(e.data); mr.start(1000);
       media.current = { stream, ctx, analyser: an, mr, chunks };
-      startChunker(stream);
     } catch (e) { media.current = {}; }
   }
   // Transcription en direct côté serveur : un second enregistreur découpe l'audio en tranches autonomes de 15 s.
@@ -1667,9 +1666,12 @@ function Capture({ v, save, onBack, onSynth }) {
     if (state === "idle") {
       recId.current = uid(); await startMedia();
       setSegs([{ start: Date.now() }]); setState("rec");
-      const serverTx = !!(await serverInfo).transcribe && !!media.current.stream;
-      // Avec la transcription serveur, la reconnaissance du navigateur ne sert qu'à l'aperçu instantané.
-      speech.current = createSpeech(v.lang === "auto" ? "fr" : v.lang, (text, lg) => { setPartial(""); if (serverTx) return; const tt = baseT + elapsedOf(segsRef.current); save(x => ({ ...x, lines: [...x.lines, { t: tt, text, lang: lg, rec: recId.current }] })); }, setPartial, setMode);
+      // Reconnaissance du navigateur en premier ; la transcription serveur (Voxtral) ne prend le relais qu'en secours
+      // (micro refusé par la reconnaissance, navigateur incompatible) ou en détection automatique de langue.
+      const info = await serverInfo; let serverTx = false;
+      const useServer = () => { if (serverTx || !info.transcribe || !media.current.stream || media.current.usedChunker) return; serverTx = true; startChunker(media.current.stream); };
+      speech.current = createSpeech(v.lang === "auto" ? "fr" : v.lang, (text, lg) => { setPartial(""); if (serverTx) return; const tt = baseT + elapsedOf(segsRef.current); save(x => ({ ...x, lines: [...x.lines, { t: tt, text, lang: lg, rec: recId.current }] })); }, setPartial, (m) => { setMode(m); if (m === "denied" || m === "unsupported" || m === "network") useServer(); });
+      if (v.lang === "auto") useServer();
       speech.current.start();
       if (!gpsOn) setGpsOn(true);
     } else if (state === "rec") pause(); else resume();
@@ -1705,8 +1707,13 @@ function Capture({ v, save, onBack, onSynth }) {
         const id = uid(); const t0 = baseT + elapsedOf(segsRef.current);
         const doc = { id, name: f.name, segments: [], duration: Math.ceil(sentences.length * .01) + 1, offset: t0, at: Date.now(), doc: true };
         const lines = sentences.map((text, i) => ({ t: t0 + i * .01, text, rec: id }));
-        save(x => ({ ...x, recordings: [...x.recordings, doc], lines: [...x.lines, ...lines].sort((a, b) => a.t - b.t) }));
-        st.toast(f.name + " : " + sentences.length + " phrases importées");
+        // Cochage immédiat par mots-clés (sans IA) : un point est renseigné si le document reprend son intitulé.
+        const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+        const doc0 = norm(text); const add = {};
+        t.items.forEach(it => { if (vRef.current.checklist[it.id]) return; const words = norm(it.label).split(/[^a-z0-9]+/).filter(w => w.length > 4 && !["dans", "pour", "avec", "sans", "entre", "toute", "toutes", "leurs"].includes(w)); const hit = words.filter(w => doc0.includes(w)).length; if (words.length && hit >= Math.min(2, words.length) && hit / words.length >= .5) add[it.id] = "ai"; });
+        save(x => ({ ...x, recordings: [...x.recordings, doc], lines: [...x.lines, ...lines].sort((a, b) => a.t - b.t), checklist: { ...x.checklist, ...add } }));
+        const n = Object.keys(add).length;
+        st.toast(f.name + " : " + sentences.length + " phrases importées" + (n ? ` · ${n} point${n > 1 ? "s" : ""} de grille coché${n > 1 ? "s" : ""}` : ""));
         coverDoc(f.name, lines);
       } catch (e) { st.toast("Lecture impossible : " + f.name); }
     }
@@ -1715,6 +1722,7 @@ function Capture({ v, save, onBack, onSynth }) {
   const [docBusy, setDocBusy] = useState("");
   async function coverDoc(name, lines) {
     if (!(await ai.available())) return;
+    const info = await serverInfo; if (info.provider === "none") return;
     setDocBusy(name); let total = 0;
     try {
       for (let i = 0; i < lines.length; i += 30) {
@@ -1723,8 +1731,8 @@ function Capture({ v, save, onBack, onSynth }) {
         const add = {}; (r.covered || []).forEach(id => { if (t.items.some(x => x.id === id) && !vRef.current.checklist[id]) add[id] = "ai"; });
         if (Object.keys(add).length) { total += Object.keys(add).length; save(x => ({ ...x, checklist: { ...x.checklist, ...add } })); }
       }
-      st.toast(total ? `${name} : ${total} point${total > 1 ? "s" : ""} de grille coché${total > 1 ? "s" : ""} par l'IA` : `${name} : aucun nouveau point de grille`);
-    } catch (e) { st.toast("Lecture IA du document : " + aiErr(e)); }
+      if (total) st.toast(`${name} : ${total} point${total > 1 ? "s" : ""} de grille supplémentaire${total > 1 ? "s" : ""} coché${total > 1 ? "s" : ""} par l'IA`);
+    } catch (e) { /* le cochage par mots-clés a déjà eu lieu ; l'IA est un complément silencieux */ }
     setDocBusy("");
   }
   async function addPhotos(files) {
@@ -2158,7 +2166,7 @@ function App() {
   useEffect(() => { (async () => {
     const [a, v, p, types] = await Promise.all([storage.get("audits"), storage.get("visits"), storage.get("practices"), storage.get("types")]);
     if (types) Object.assign(AUDIT_TYPES, types);
-    setAudits(a ? (a.some(x => x.id === "a42") ? a.map(x => x.id === "a42" && (!x.plan || String(x.plan.src).startsWith("/demo/")) ? { ...AUDIT_42(), findings: x.findings, status: x.status } : x) : [AUDIT_42(), ...a]) : SEED_AUDITS()); setVisits(v ? (ls.get("insp.v42.removed", false) ? v : v.some(x => x.id === "v42demo") ? v.map(x => x.id === "v42demo" && x.demoVersion !== 3 ? VISIT_42() : x) : [VISIT_42(), ...v]) : [VISIT_42()]); if (p) setPractices(p);
+    setAudits(a ? (a.some(x => x.id === "a42") ? a.map(x => x.id === "a42" && (!x.plan || String(x.plan.src).startsWith("/demo/")) ? { ...AUDIT_42(), findings: x.findings, status: x.status } : x) : [AUDIT_42(), ...a]) : SEED_AUDITS()); setVisits(v ? (ls.get("insp.v42.removed", false) ? v : v.some(x => x.id === "v42demo") ? v.map(x => x.id === "v42demo" && x.demoVersion !== 4 ? VISIT_42() : x) : [VISIT_42(), ...v]) : [VISIT_42()]); if (p) setPractices(p);
   })(); }, []);
   useEffect(() => { if (audits) storage.set("audits", audits); }, [audits]);
   useEffect(() => { storage.set("visits", visits); }, [visits]);
