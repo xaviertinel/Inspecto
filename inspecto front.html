@@ -557,7 +557,8 @@ const localSampler = (() => {
 })();
 const ai = (() => {
   let samplerP = null;
-  const get = () => { if (!samplerP) samplerP = Promise.resolve(localSampler); return samplerP; };
+  // Dans un Artifact claude.ai, l'IA vient du compte du visiteur (capacité "sample") ; sinon du serveur local.
+  const get = () => { if (!samplerP) samplerP = (window.claude?.use ? window.claude.use("sample").catch(() => null) : Promise.resolve(null)).then(s => s || localSampler); return samplerP; };
   async function available() { return !!(await get()); }
   async function text(prompt, opts = {}) {
     const s = await get(); if (!s) throw { code: "unavailable", message: "IA indisponible dans cette vue" };
@@ -1248,7 +1249,7 @@ function ChatDrawer({ audit, onClose }) {
    Écrans : accueil → formulaire → consentement RGPD → capture → synthèse
    ========================================================================= */
 const LANGS = { auto: "Détection auto", fr: "Français", en: "Anglais", es: "Espagnol", ar: "Arabe" };
-const serverInfo = fetch("/api/info").then(r => r.json()).catch(() => ({}));
+const serverInfo = location.protocol.startsWith("http") && !window.claude ? fetch("/api/info").then(r => r.json()).catch(() => ({})) : Promise.resolve({});
 function newVisit(p) {
   return { id: uid(), code: shareCode(), name: "", site: "", date: today(), place: "", gps: null, lang: "fr", type: "qualif-indus", sector: "Usine", team: [], consent: null,
     recordings: [], lines: [], photos: [], trace: [], checklist: {}, followup: null, translations: {}, sections: null, analysis: null, pendingAnalysis: false, auditId: null, createdAt: Date.now(), ...p };
