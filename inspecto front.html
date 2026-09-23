@@ -573,7 +573,7 @@ const ai = (() => {
   async function canImages() { const s = await get(); try { const l = await s?.limits?.(); return l?.images || null; } catch (e) { return null; } }
   return { available, text, json, canImages, raw: get };
 })();
-const aiErr = (e) => ({ unavailable: "Serveur Inspecto injoignable. Lancez node server.js puis ouvrez http://localhost:3000.", offline: "Hors ligne : l'analyse sera lancée au retour du réseau.", not_granted: "Autorisation refusée pour les appels à Claude.", rate_limited: "Trop d'appels, réessayez dans un instant.", cancelled: "Annulé." }[e?.code] || ("Erreur IA : " + (e?.message || "inconnue")));
+const aiErr = (e) => ({ unavailable: "IA indisponible ici : exportez la visite et ouvrez-la dans l'Artifact claude.ai (IA de votre compte), ou lancez le serveur local avec une clé API.", offline: "Hors ligne : l'analyse sera lancée au retour du réseau.", not_granted: "Autorisation refusée pour les appels à Claude.", rate_limited: "Trop d'appels, réessayez dans un instant.", cancelled: "Annulé." }[e?.code] || ("Erreur IA : " + (e?.message || "inconnue")));
 
 /* Prompts métier. Chaque prompt porte son instruction, ses données et son format. */
 const prompts = {
@@ -600,7 +600,7 @@ Réponds UNIQUEMENT en JSON :
     return `Traduis chaque ligne en ${L}, fidèlement, sans rien ajouter. Réponds UNIQUEMENT en JSON : {"lines":["..."]} avec exactement ${lines.length} éléments dans le même ordre.\n\n${lines.map((l, i) => `${i + 1}. ${l.text}`).join("\n")}`;
   },
   sections(lines) {
-    return `Découpe cette transcription de visite d'usine en 3 à 6 sections thématiques (ex. "Réception matières", "Ligne de presses"). Réponds UNIQUEMENT en JSON : {"sections":[{"t":secondes,"fr":"...","en":"...","es":"..."}]}\n\n${lines.map(l => `${Math.round(l.t)} | ${l.text}`).join("\n")}`;
+    return `Découpe cette transcription de visite de site en 3 à 8 chapitres thématiques courts (ex. "Réception matières", "Ligne de presses", "Terrasse jardin"), dans l'ordre chronologique. "t" est le time code en secondes de la première phrase du chapitre : reprends exactement une des valeurs de la première colonne. Réponds UNIQUEMENT en JSON valide, sans texte autour : {"sections":[{"t":0,"fr":"...","en":"...","es":"..."}]}\n\nTranscription (secondes | texte) :\n${lines.map(l => `${Math.round(l.t)} | ${l.text}`).join("\n")}`;
   },
   grid(label, sector) {
     return `Construis une grille d'audit pour le type "${label}" (secteur ${sector}) en t'appuyant sur les référentiels sectoriels reconnus que tu connais (normes ISO, standards sectoriels, codes de conduite). Réponds UNIQUEMENT en JSON : {"refs":["..."],"domains":["4 à 6 domaines"],"bench":{"<domaine>":0-100},"items":[{"domain":"...","code":"référence précise","label":"point de contrôle"}]} avec 12 à 18 points.`;
@@ -1770,7 +1770,18 @@ ${v.photos.length ? `<h2>Photos</h2>${v.photos.map(p => `<img src="${p.src}" alt
     ai.json(prompts.translate(v.lines, lang), { modelTier: "quick" }).then(r => save(x => ({ ...x, translations: { ...x.translations, [lang]: r.lines } }))).catch(e => st.toast(aiErr(e))).finally(() => setTrBusy(false)); }, [lang]);
   useEffect(() => { if (online && v.pendingAnalysis && !busy) run(); }, [online]);
 
-  async function genSections() { try { const r = await ai.json(prompts.sections(v.lines), { modelTier: "quick" }); save({ sections: r.sections }); } catch (e) { st.toast(aiErr(e)); } }
+  const [secBusy, setSecBusy] = useState(false);
+  async function genSections() {
+    if (secBusy) return; setSecBusy(true); setErr("");
+    try {
+      const r = await ai.json(prompts.sections(v.lines), { modelTier: "quick" });
+      const raw = Array.isArray(r) ? r : (r?.sections || r?.chapters || Object.values(r || {}).find(Array.isArray) || []);
+      const clean = raw.map(s => { const name = s.fr || s.title || s.name || s.label || ""; return { t: Math.max(0, Math.round(Number(s.t ?? s.start ?? 0) || 0)), fr: name, en: s.en || name, es: s.es || name }; }).filter(s => s.fr).sort((a, b) => a.t - b.t);
+      if (!clean.length) throw { message: "Claude n'a renvoyé aucun chapitre exploitable" };
+      save({ sections: clean }); st.toast(clean.length + " chapitres générés");
+    } catch (e) { const m = aiErr(e); setErr(m); st.toast(m); }
+    setSecBusy(false);
+  }
   async function run() {
     if (!navigator.onLine) { save({ pendingAnalysis: true }); setErr("Hors ligne : l'analyse est mise en file d'attente et démarrera automatiquement au retour du réseau."); return; }
     setErr(""); setBusy(true); setStep(0);
@@ -1822,7 +1833,8 @@ ${v.photos.length ? `<h2>Photos</h2>${v.photos.map(p => `<img src="${p.src}" alt
     </div></div>;
   const Transcript = <div>
     <div className="row wrap" style={{ marginBottom: 10, gap: 6 }}>
-      {!v.sections && v.lines.length > 3 && <button className="btn btn-sm" onClick={genSections}><Icon n="sparkle" s={14} />Générer les chapitres</button>}
+      {!v.sections?.length && v.lines.length > 1 && <button className="btn btn-sm" disabled={secBusy} onClick={genSections}>{secBusy ? <><span className="spinner" style={{ width: 12, height: 12 }} />Claude découpe la visite…</> : <><Icon n="sparkle" s={14} />Générer les chapitres</>}</button>}
+      {v.sections?.length > 0 && <button className="btn btn-sm btn-ghost" disabled={secBusy} onClick={() => { if (confirm("Regénérer les chapitres avec Claude ? Les chapitres actuels et leurs positions sur le plan seront remplacés.")) { save(x => ({ ...x, sections: [], plan: x.plan ? { ...x.plan, points: {} } : x.plan })); setTimeout(genSections, 0); } }}>{secBusy ? <span className="spinner" style={{ width: 12, height: 12 }} /> : <Icon n="refresh" s={14} />}</button>}
       <button className="btn btn-sm" onClick={() => addSection(cur)}><Icon n="plus" s={14} />Chapitre à {fmt(cur)}</button>
       {secs.length > 0 && <span className="faint" style={{ fontSize: 12 }}>{secs.length} chapitre{secs.length > 1 ? "s" : ""}{v.plan ? ` · ${Object.keys(v.plan.points || {}).length} placé${Object.keys(v.plan.points || {}).length > 1 ? "s" : ""} sur le plan` : ""}</span>}
     </div>
