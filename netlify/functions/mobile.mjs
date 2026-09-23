@@ -13,7 +13,7 @@ export default async (req) => {
   const m = url.pathname.match(/\/api\/mobile\/([A-Z0-9]{6})\/photos(?:\/([\w-]+))?\/?$/i);
   if (!m) return json(404, { error: "not found" });
   const code = m[1].toUpperCase(); const photoId = m[2];
-  const store = getStore("inspecto-mobile");
+  const store = getStore({ name: "inspecto-mobile", consistency: "strong" });
 
   if (req.method === "DELETE" && photoId) {
     const { blobs } = await store.list({ prefix: code + "/p/" });
