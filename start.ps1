@@ -6,4 +6,4 @@ if (-not $env:ANTHROPIC_API_KEY -and -not $env:MISTRAL_API_KEY) {
 $node = "node"
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) { $node = "$HOME\node\node.exe" }
 Start-Process "http://localhost:3000"
-& $node "$PSScriptRoot\server.js"
+& $node --use-system-ca "$PSScriptRoot\server.js"
