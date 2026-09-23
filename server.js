@@ -13,7 +13,7 @@ if (!KEY) {
 const PROVIDER = KEY.startsWith("sk-ant") ? "anthropic" : "mistral";
 const MODELS = PROVIDER === "anthropic"
   ? { quick: "claude-haiku-4-5", default: "claude-sonnet-5" }
-  : { quick: "mistral-small-latest", default: "mistral-medium-latest" };
+  : { quick: process.env.MISTRAL_QUICK || "ministral-14b-latest", default: process.env.MISTRAL_DEFAULT || "pixtral-12b-2409" };
 
 function readBody(req, limit = 40 * 1024 * 1024) {
   return new Promise((res, rej) => {
@@ -116,7 +116,8 @@ http.createServer(async (req, res) => {
     }
     json(res, 404, { error: "not found" });
   } catch (e) {
-    console.error(e.message);
-    json(res, e.status || 500, { error: e.message, code: e.code || "server_error" });
+    const cause = e.cause ? ` (${e.cause.code || ""} ${e.cause.message || ""})`.replace(/\s+\)/, ")") : "";
+    console.error(e.message + cause);
+    json(res, e.status || 500, { error: e.message + cause, code: e.code || "server_error" });
   }
 }).listen(PORT, () => console.log(`Inspecto sur http://localhost:${PORT}  (fournisseur IA : ${PROVIDER}, modeles ${MODELS.quick} / ${MODELS.default})`));
