@@ -616,32 +616,26 @@ Transcription : ${(audit.transcript || []).map(l => `${fmt(l[0])} ${l[1]}`).join
   },
 };
 
-/* ---------- speech : reconnaissance vocale navigateur, sinon script démo ---------- */
-function createSpeech(lang, onLine, onPartial) {
+/* ---------- speech : reconnaissance vocale du navigateur (Edge/Chrome), langue changeable en cours ---------- */
+const SR_CODES = { fr: "fr-FR", en: "en-US", es: "es-ES", ar: "ar-SA" };
+function createSpeech(lang, onLine, onPartial, onStatus = () => {}) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const code = { fr: "fr-FR", en: "en-US", es: "es-ES", ar: "ar-SA" }[lang] || navigator.language || "fr-FR";
-  let rec = null, running = false, demoTimer = null, demoIdx = 0, mode = "demo";
-  function startDemo() {
-    mode = "demo";
-    const lines = DEMO_SCRIPT[lang] || DEMO_SCRIPT.fr;
-    demoTimer = setInterval(() => { if (demoIdx < lines.length) onLine(lines[demoIdx++]); }, 4200);
+  let rec = null, running = false, mode = SR ? "idle" : "unsupported", cur = lang;
+  function boot() {
+    if (!SR) { mode = "unsupported"; onStatus(mode); return; }
+    try {
+      rec = new SR(); rec.lang = SR_CODES[cur] || navigator.language || "fr-FR"; rec.continuous = true; rec.interimResults = true; mode = "live"; onStatus(mode);
+      rec.onresult = (e) => { for (let i = e.resultIndex; i < e.results.length; i++) { const r = e.results[i]; if (r.isFinal) { const t = r[0].transcript.trim(); if (t) onLine(t, cur); onPartial(""); } else onPartial(r[0].transcript); } };
+      rec.onerror = (e) => { if (["not-allowed", "service-not-allowed", "audio-capture"].includes(e.error)) { rec = null; mode = "denied"; onStatus(mode); } else if (e.error === "network") { mode = "network"; onStatus(mode); } };
+      rec.onend = () => { if (running && rec) try { rec.start(); } catch (e) {} };
+      rec.start();
+    } catch (e) { rec = null; mode = "unsupported"; onStatus(mode); }
   }
   return {
     get mode() { return mode; },
-    start() {
-      running = true;
-      if (SR) {
-        try {
-          rec = new SR(); rec.lang = code; rec.continuous = true; rec.interimResults = true; mode = "live";
-          rec.onresult = (e) => { for (let i = e.resultIndex; i < e.results.length; i++) { const r = e.results[i]; if (r.isFinal) onLine(r[0].transcript.trim()); else onPartial(r[0].transcript); } };
-          rec.onerror = (e) => { if (e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture") { rec = null; if (running && !demoTimer) startDemo(); } };
-          rec.onend = () => { if (running && rec) try { rec.start(); } catch (e) {} };
-          rec.start(); return;
-        } catch (e) { rec = null; }
-      }
-      startDemo();
-    },
-    stop() { running = false; if (rec) { const r = rec; rec = null; try { r.stop(); } catch (e) {} } if (demoTimer) { clearInterval(demoTimer); demoTimer = null; } },
+    start() { running = true; boot(); },
+    stop() { running = false; if (rec) { const r = rec; rec = null; try { r.stop(); } catch (e) {} } },
+    setLang(l) { cur = l; if (running) { const r = rec; rec = null; try { r?.stop(); } catch (e) {} boot(); } },
   };
 }
 
@@ -1511,8 +1505,8 @@ function Capture({ v, save, onBack, onSynth }) {
     if (state === "idle") {
       recId.current = uid(); await startMedia();
       setSegs([{ start: Date.now() }]); setState("rec");
-      speech.current = createSpeech(v.lang, (text) => { setPartial(""); const tt = baseT + elapsedOf(segsRef.current); save(x => ({ ...x, lines: [...x.lines, { t: tt, text, rec: recId.current }] })); }, setPartial);
-      speech.current.start(); setMode(speech.current.mode);
+      speech.current = createSpeech(v.lang === "auto" ? "fr" : v.lang, (text, lg) => { setPartial(""); const tt = baseT + elapsedOf(segsRef.current); save(x => ({ ...x, lines: [...x.lines, { t: tt, text, lang: lg, rec: recId.current }] })); }, setPartial, setMode);
+      speech.current.start();
       if (!gpsOn) setGpsOn(true);
     } else if (state === "rec") pause(); else resume();
   }
@@ -1616,13 +1610,19 @@ function Capture({ v, save, onBack, onSynth }) {
     <VTop onBack={onBack} title={v.name} sub={`${v.place || "Lieu non renseigné"} · ${frDate(v.date)}`} right={<><button className="icon-btn" onClick={() => setSheet("share")} title="Inviter"><Icon n="users" /></button><button className="btn btn-red btn-sm" onClick={() => { if (state !== "idle") stopRec(); if (uncovered.length && v.lines.length) setSheet("gaps"); else onSynth(); }}><Icon n="report" s={15} />Synthèse</button></>} />
     <div className="v-body">
       <div className="v-center">
-        <div className="eyebrow">{t.short} · {LANGS[v.lang]}</div>
+        <div className="row wrap" style={{ justifyContent: "center", gap: 8 }}><span className="eyebrow">{t.short} · langue parlée</span>
+          <div className="seg">{SPOKEN.map(k => <button key={k} className={(v.lang === "auto" ? "fr" : v.lang) === k ? "on" : ""} onClick={() => { save({ lang: k }); speech.current?.setLang(k); }}>{k.toUpperCase()}</button>)}</div></div>
         <div className="orb-wrap"><div className="orb-ring" style={{ transform: `scale(${1 + level * .4})`, opacity: state === "rec" ? .4 : 0 }} />
           <button className={"orb" + (state === "idle" ? " idle" : state === "paused" ? " paused" : "")} style={{ transform: `scale(${scale})` }} onClick={orb} aria-label={state === "idle" ? "Démarrer" : state === "rec" ? "Pause" : "Reprendre"}><Icon n={state === "rec" ? "mic" : state === "paused" ? "play" : "mic"} s={44} w={1.6} /></button></div>
         <div className="mono" style={{ fontSize: 30, fontWeight: 500 }}>{fmt(baseT + elapsed)}</div>
-        <div className="eyebrow" style={{ color: state === "rec" ? "var(--bp-red)" : undefined }}>{state === "rec" ? "Enregistrement" : state === "paused" ? "En pause" : v.recordings.length ? "Prêt pour un nouvel enregistrement" : "Touchez pour démarrer"}{mode === "demo" && state !== "idle" ? " · transcription démo" : ""}</div>
+        <div className="eyebrow" style={{ color: state === "rec" ? "var(--bp-red)" : undefined }}>{state === "rec" ? "Enregistrement" : state === "paused" ? "En pause" : v.recordings.length ? "Prêt pour un nouvel enregistrement" : "Touchez pour démarrer"}</div>
+        {state !== "idle" && mode === "denied" && <div className="card card-pad" style={{ fontSize: 13, marginTop: 10, maxWidth: 420, boxShadow: "inset 3px 0 0 var(--bp-red)" }}><b>Micro refusé.</b> Autorisez le microphone dans le navigateur (icône dans la barre d'adresse) puis relancez, ou dictez vos notes ci-dessous avec le clavier.</div>}
+        {state !== "idle" && mode === "unsupported" && <div className="card card-pad" style={{ fontSize: 13, marginTop: 10, maxWidth: 420, boxShadow: "inset 3px 0 0 var(--bp-red)" }}><b>Reconnaissance vocale indisponible dans ce navigateur.</b> Utilisez Edge ou Chrome, ou dictez vos notes ci-dessous avec le clavier.</div>}
+        {state !== "idle" && mode === "network" && <div className="faint" style={{ fontSize: 12, marginTop: 8 }}>Service de reconnaissance vocale injoignable (réseau). Nouvel essai automatique…</div>}
         {state !== "idle" && <div className="row" style={{ marginTop: 14 }}><button className="btn" onClick={state === "rec" ? pause : resume}><Icon n={state === "rec" ? "pause" : "play"} s={16} />{state === "rec" ? "Pause" : "Reprendre"}</button><button className="btn btn-dark" onClick={stopRec}><Icon n="stop" s={14} />Terminer l'enregistrement</button></div>}
-        <div className="live-line">{lastLine && <>« {lastLine} »</>}</div>
+        <div className="live-line" dir={(v.lang === "ar") ? "rtl" : undefined}>{lastLine && <>« {lastLine} »</>}</div>
+        <form className="row" style={{ width: "100%", maxWidth: 480, marginTop: 6 }} onSubmit={e => { e.preventDefault(); const f = e.currentTarget.querySelector("input"); const text = f.value.trim(); if (!text) return; const tt = baseT + elapsedOf(segsRef.current); save(x => ({ ...x, lines: [...x.lines, { t: tt, text, lang: v.lang === "auto" ? "fr" : v.lang, rec: recId.current || "note", manual: true }] })); f.value = ""; }}>
+          <input className="input" placeholder="Note écrite ou dictée au clavier (ajoutée à la transcription)" style={{ flex: 1 }} /><button className="btn" type="submit"><Icon n="plus" s={16} /></button></form>
         <div className="v-tools">
           <button className={"v-tool" + (gpsOn ? " on" : "")} onClick={() => setGpsOn(!gpsOn)}><Icon n="pin" />GPS{gpsOn ? " actif" : ""}</button>
           <button className="v-tool" onClick={() => setSheet("camera")}><Icon n="cam" />Photo</button>
