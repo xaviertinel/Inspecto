@@ -1630,20 +1630,52 @@ function Capture({ v, save, onBack, onSynth }) {
       const ctx = new (window.AudioContext || window.webkitAudioContext)(); const an = ctx.createAnalyser(); an.fftSize = 512; ctx.createMediaStreamSource(stream).connect(an);
       const mr = new MediaRecorder(stream); const chunks = []; mr.ondataavailable = e => chunks.push(e.data); mr.start(1000);
       media.current = { stream, ctx, analyser: an, mr, chunks };
+      startChunker(stream);
     } catch (e) { media.current = {}; }
   }
-  function stopMedia() { return new Promise(res => { const m = media.current; if (!m.mr) return res(null); m.mr.onstop = () => { const b = new Blob(m.chunks, { type: m.mr.mimeType || "audio/webm" }); m.stream.getTracks().forEach(x => x.stop()); m.ctx.close(); media.current = {}; res(b); }; m.mr.stop(); }); }
+  // Transcription en direct côté serveur : un second enregistreur découpe l'audio en tranches autonomes de 15 s.
+  const [liveTx, setLiveTx] = useState(0);
+  async function startChunker(stream) {
+    const info = await serverInfo; if (!info.transcribe) return;
+    const m = media.current; if (m.stream !== stream) return;
+    m.usedChunker = true; m.chunkerOn = true; m.chunkStart = baseT + elapsedOf(segsRef.current);
+    const spin = () => {
+      const cr = new MediaRecorder(stream); const parts = [];
+      cr.ondataavailable = e => parts.push(e.data);
+      cr.onstop = () => { const start = m.chunkStart; m.chunkStart = baseT + elapsedOf(segsRef.current); const b = new Blob(parts, { type: cr.mimeType || "audio/webm" }); if (b.size > 3000) transcribeChunk(b, start); if (m.chunkerOn && m.chunker === cr) spin(); };
+      cr.start(); m.chunker = cr;
+    };
+    spin(); m.chunkTimer = setInterval(() => { try { if (m.chunker?.state === "recording") m.chunker.stop(); } catch (e) {} }, 15000);
+  }
+  function pauseChunker() { const m = media.current; if (!m.chunkTimer) return; clearInterval(m.chunkTimer); m.chunkTimer = null; m.chunkerOn = false; try { m.chunker?.stop(); } catch (e) {} }
+  function resumeChunker() { const m = media.current; if (m.usedChunker && m.stream && !m.chunkerOn) startChunker(m.stream); }
+  async function transcribeChunk(blob, start) {
+    setLiveTx(n => n + 1);
+    try {
+      const r = await fetch("/api/transcribe?lang=" + encodeURIComponent(vRef.current.lang), { method: "POST", headers: { "content-type": blob.type || "audio/webm" }, body: blob });
+      const d = await r.json(); if (!r.ok) throw new Error(d.error || r.statusText);
+      const det = (d.language || "").slice(0, 2).toLowerCase(); const lg = SPOKEN.includes(det) ? det : (vRef.current.lang === "auto" ? "fr" : vRef.current.lang);
+      const segs2 = d.segments?.length ? d.segments : (d.text?.trim() ? [{ start: 0, text: d.text }] : []);
+      const lines = segs2.filter(s => s.text?.trim()).map(s => ({ t: start + (s.start || 0), text: s.text.trim(), lang: lg, rec: recId.current }));
+      if (lines.length) save(x => ({ ...x, lines: [...x.lines, ...lines].sort((a, b) => a.t - b.t), lang: x.lang === "auto" && SPOKEN.includes(det) ? det : x.lang }));
+      if (SPOKEN.includes(det) && det !== (vRef.current.lang === "auto" ? "" : vRef.current.lang) && lines.length) st.toast("Langue détectée : " + LANGS[det]);
+    } catch (e) { st.toast("Transcription serveur : " + e.message); }
+    setLiveTx(n => n - 1);
+  }
+  function stopMedia() { return new Promise(res => { const m = media.current; if (!m.mr) return res(null); pauseChunker(); m.mr.onstop = () => { const b = new Blob(m.chunks, { type: m.mr.mimeType || "audio/webm" }); m.stream.getTracks().forEach(x => x.stop()); m.ctx.close(); const used = m.usedChunker; media.current = { usedChunker: used }; res(b); }; m.mr.stop(); }); }
   async function orb() {
     if (state === "idle") {
       recId.current = uid(); await startMedia();
       setSegs([{ start: Date.now() }]); setState("rec");
-      speech.current = createSpeech(v.lang === "auto" ? "fr" : v.lang, (text, lg) => { setPartial(""); const tt = baseT + elapsedOf(segsRef.current); save(x => ({ ...x, lines: [...x.lines, { t: tt, text, lang: lg, rec: recId.current }] })); }, setPartial, setMode);
+      const serverTx = !!(await serverInfo).transcribe && !!media.current.stream;
+      // Avec la transcription serveur, la reconnaissance du navigateur ne sert qu'à l'aperçu instantané.
+      speech.current = createSpeech(v.lang === "auto" ? "fr" : v.lang, (text, lg) => { setPartial(""); if (serverTx) return; const tt = baseT + elapsedOf(segsRef.current); save(x => ({ ...x, lines: [...x.lines, { t: tt, text, lang: lg, rec: recId.current }] })); }, setPartial, setMode);
       speech.current.start();
       if (!gpsOn) setGpsOn(true);
     } else if (state === "rec") pause(); else resume();
   }
-  function pause() { speech.current?.stop(); media.current.mr?.pause?.(); setSegs(s => s.map((g, i) => i === s.length - 1 ? { ...g, end: Date.now() } : g)); setState("paused"); }
-  function resume() { media.current.mr?.resume?.(); setSegs(s => [...s, { start: Date.now() }]); speech.current?.start(); setState("rec"); }
+  function pause() { speech.current?.stop(); media.current.mr?.pause?.(); pauseChunker(); setSegs(s => s.map((g, i) => i === s.length - 1 ? { ...g, end: Date.now() } : g)); setState("paused"); }
+  function resume() { media.current.mr?.resume?.(); setSegs(s => [...s, { start: Date.now() }]); speech.current?.start(); resumeChunker(); setState("rec"); }
   async function stopRec() {
     if (state === "idle") return; speech.current?.stop();
     const fin = segs.map((g, i) => i === segs.length - 1 && !g.end ? { ...g, end: Date.now() } : g);
@@ -1651,7 +1683,7 @@ function Capture({ v, save, onBack, onSynth }) {
     const rec = { id: recId.current, name: "Enregistrement " + (v.recordings.length + 1), segments: fin, duration: elapsedOf(fin), offset: baseT, at: fin[0].start, audio: blob };
     save(x => ({ ...x, recordings: [...x.recordings, rec] })); setSegs([]); setState("idle"); setPartial(""); st.toast("Enregistrement sauvegardé");
     const info = await serverInfo; const liveLines = vRef.current.lines.filter(l => l.rec === rec.id).length;
-    if (blob && info.transcribe && (v.lang === "auto" || mode !== "live" || !liveLines)) {
+    if (blob && info.transcribe && !media.current.usedChunker && (v.lang === "auto" || mode !== "live" || !liveLines)) {
       setTranscribing(true);
       try {
         const r = await fetch("/api/transcribe?lang=" + encodeURIComponent(v.lang), { method: "POST", headers: { "content-type": blob.type || "audio/webm" }, body: blob });
@@ -1800,7 +1832,12 @@ function Capture({ v, save, onBack, onSynth }) {
         {state !== "idle" && mode === "unsupported" && <div className="card card-pad" style={{ fontSize: 13, marginTop: 10, maxWidth: 420, boxShadow: "inset 3px 0 0 var(--bp-red)" }}><b>Reconnaissance vocale indisponible dans ce navigateur.</b> Utilisez Edge ou Chrome, ou dictez vos notes ci-dessous avec le clavier.</div>}
         {state !== "idle" && mode === "network" && <div className="faint" style={{ fontSize: 12, marginTop: 8 }}>Service de reconnaissance vocale injoignable (réseau). Nouvel essai automatique…</div>}
         {state !== "idle" && <div className="row" style={{ marginTop: 14 }}><button className="btn" onClick={state === "rec" ? pause : resume}><Icon n={state === "rec" ? "pause" : "play"} s={16} />{state === "rec" ? "Pause" : "Reprendre"}</button><button className="btn btn-dark" onClick={stopRec}><Icon n="stop" s={14} />Terminer l'enregistrement</button></div>}
-        <div className="live-line" dir={(v.lang === "ar") ? "rtl" : undefined}>{lastLine && <>« {lastLine} »</>}</div>
+        {(() => { const cur = v.lines.filter(l => l.rec === recId.current); const show = state !== "idle" || cur.length; if (!show) return <div className="live-line" />; return <div className="card" style={{ width: "100%", maxWidth: 560, marginTop: 12, textAlign: "left", maxHeight: 200, overflow: "auto", padding: "8px 12px" }}>
+          <div className="row" style={{ marginBottom: 4 }}><span className="eyebrow">Transcription en direct</span>{liveTx > 0 && <span className="spinner" style={{ width: 11, height: 11 }} />}<div className="spacer" /><span className="mono faint" style={{ fontSize: 11 }}>{cur.length} phrase{cur.length > 1 ? "s" : ""}</span></div>
+          {cur.slice(-12).map((l, i) => <div key={i} className="row" style={{ fontSize: 14, gap: 8, alignItems: "flex-start", padding: "2px 0" }}><span className="mono faint" style={{ fontSize: 11, marginTop: 3 }}>{fmt(l.t)}</span><span dir={l.lang === "ar" ? "rtl" : undefined} style={{ flex: 1, textAlign: l.lang === "ar" ? "right" : "left" }}>{l.text}</span>{l.lang && l.lang !== (v.lang === "auto" ? "fr" : v.lang) && <span className="tag" style={{ fontSize: 10 }}>{l.lang.toUpperCase()}</span>}</div>)}
+          {partial && <div className="faint" style={{ fontSize: 14, fontStyle: "italic", padding: "2px 0 2px 44px" }}>{partial}…</div>}
+          {!cur.length && !partial && <div className="faint" style={{ fontSize: 13 }}>{state === "rec" ? "Parlez : le texte apparaît ici (tranches de quelques secondes)." : "En pause."}</div>}
+        </div>; })()}
         <form className="row" style={{ width: "100%", maxWidth: 480, marginTop: 6 }} onSubmit={e => { e.preventDefault(); const f = e.currentTarget.querySelector("input"); const text = f.value.trim(); if (!text) return; const tt = baseT + elapsedOf(segsRef.current); save(x => ({ ...x, lines: [...x.lines, { t: tt, text, lang: v.lang === "auto" ? "fr" : v.lang, rec: recId.current || "note", manual: true }] })); f.value = ""; }}>
           <input className="input" placeholder="Note écrite ou dictée au clavier (ajoutée à la transcription)" style={{ flex: 1 }} /><button className="btn" type="submit"><Icon n="plus" s={16} /></button></form>
         <div className="v-tools">
