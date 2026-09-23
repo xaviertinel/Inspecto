@@ -10,8 +10,9 @@ const ai = createProvider(process.env);
 if (ai.provider === "none") console.warn("Aucune cle API : le serveur sert l'application et le relais photos, sans IA.");
 
 const mobilePhotos = new Map(); // code -> [{id, name, note, src, at, received}]
+const mobileDeleted = new Map(); // code -> [{id, at}]
 const lanIp = () => { for (const l of Object.values(os.networkInterfaces())) for (const a of l || []) if (a.family === "IPv4" && !a.internal && !a.address.startsWith("169.254")) return a.address; return "localhost"; };
-const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "content-type" };
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS", "Access-Control-Allow-Headers": "content-type" };
 
 function readBody(req, limit = 40 * 1024 * 1024) {
   return new Promise((res, rej) => {
@@ -38,6 +39,12 @@ http.createServer(async (req, res) => {
       return json(res, 200, await ai.transcribe(await readBody(req), req.headers["content-type"], q.get("lang"), console.log));
     }
     if (req.method === "GET" && req.url === "/api/info") return json(res, 200, { ...ai.info(), lanUrl: `http://${lanIp()}:${PORT}`, mobile: true });
+    const del = req.url.match(/^\/api\/mobile\/([A-Za-z0-9]{6})\/photos\/([\w-]+)\/?$/);
+    if (del && req.method === "DELETE") {
+      const code = del[1].toUpperCase(); const list = (mobilePhotos.get(code) || []).filter(p => p.id !== del[2]);
+      mobilePhotos.set(code, list); const d = mobileDeleted.get(code) || []; d.push({ id: del[2], at: Date.now() }); mobileDeleted.set(code, d);
+      return json(res, 200, { ok: true });
+    }
     const mob = req.url.match(/^\/api\/mobile\/([A-Za-z0-9]{6})\/photos\/?(\?.*)?$/);
     if (mob) {
       const code = mob[1].toUpperCase(); const list = mobilePhotos.get(code) || [];
@@ -49,7 +56,7 @@ http.createServer(async (req, res) => {
         return json(res, 200, { ok: true, id: photo.id });
       }
       const q = new URL(req.url, "http://x").searchParams; const since = Number(q.get("since") || 0);
-      return json(res, 200, { count: list.length, photos: q.get("meta") === "1" ? [] : list.filter(x => x.received > since) });
+      return json(res, 200, { count: list.length, photos: q.get("meta") === "1" ? [] : list.filter(x => x.received > since), deleted: (mobileDeleted.get(code) || []).filter(x => x.at > since) });
     }
     if (req.method === "GET" && (req.url === "/mobile" || req.url.startsWith("/mobile/") || req.url.startsWith("/mobile?"))) {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });

@@ -1607,7 +1607,8 @@ function Capture({ v, save, onBack, onSynth }) {
           save(x => ({ ...x, photos: [...x.photos, ...add.filter(a => !x.photos.some(q => q.id === a.id))] }));
           st.toast(fresh.length > 1 ? fresh.length + " photos reçues du téléphone" : "Photo reçue du téléphone");
         }
-        mobileSince.current = Math.max(mobileSince.current, ...(d.photos || []).map(p => p.received || 0));
+        if (d.deleted?.length) { const gone = new Set(d.deleted.map(x => x.id)); const n = vRef.current.photos.filter(p => p.fromMobile && gone.has(p.id)).length; if (n) { save(x => ({ ...x, photos: x.photos.filter(p => !(p.fromMobile && gone.has(p.id))) })); st.toast(n > 1 ? n + " photos retirées depuis le téléphone" : "Photo retirée depuis le téléphone"); } }
+        mobileSince.current = Math.max(mobileSince.current, ...(d.photos || []).map(p => p.received || 0), ...(d.deleted || []).map(x => x.at || 0));
         setMobileState(r.kind === "netlify" ? "Téléphone : relais Netlify" : "Téléphone : Wi-Fi local");
       } catch (e) { setMobileState("Téléphone : relais injoignable"); }
     };

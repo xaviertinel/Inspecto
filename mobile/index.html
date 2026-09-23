@@ -29,6 +29,8 @@ input.note{width:100%;height:44px;border:1px solid var(--border);border-radius:1
 .thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .thumb .st{position:absolute;left:6px;bottom:6px;font-size:11px;padding:2px 6px;border-radius:6px;background:rgba(0,0,0,.6);color:#fff}
 .thumb .st.ko{background:var(--red)}
+.thumb .del{position:absolute;top:6px;right:6px;width:30px;height:30px;border:0;border-radius:15px;background:rgba(0,0,0,.6);color:#fff;display:grid;place-items:center;padding:0}
+.thumb .del:active{background:var(--red)}
 .faint{color:var(--muted);font-size:13px}
 .hidden{display:none}
 .codebox{display:flex;gap:8px}
@@ -85,7 +87,19 @@ async function ping() {
 }
 function render() {
   grid.innerHTML = ""; $("count").textContent = sent.length; $("empty").style.display = sent.length ? "none" : "";
-  for (const p of [...sent].reverse()) { const d = document.createElement("div"); d.className = "thumb"; d.innerHTML = `<img src="${p.thumb}" alt=""><span class="st ${p.ok ? "" : "ko"}">${p.ok ? "envoyée" : "en attente"}</span>`; grid.appendChild(d); }
+  for (const p of [...sent].reverse()) {
+    const d = document.createElement("div"); d.className = "thumb";
+    d.innerHTML = `<img src="${p.thumb}" alt=""><span class="st ${p.ok ? "" : "ko"}">${p.ok ? "envoyée" : "en attente"}</span><button class="del" title="Supprimer" aria-label="Supprimer la photo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>`;
+    d.querySelector(".del").onclick = () => removePhoto(p);
+    grid.appendChild(d);
+  }
+}
+async function removePhoto(p) {
+  if (!confirm("Supprimer cette photo ? Elle sera aussi retirée de la visite sur l'ordinateur.")) return;
+  const i = sent.indexOf(p); if (i >= 0) sent.splice(i, 1);
+  localStorage.setItem("insp.mobile.sent", JSON.stringify(sent.map(x => ({ ...x, src: x.ok ? undefined : x.src }))));
+  render();
+  if (p.ok) { try { const r = await fetch(api + "/api/mobile/" + code + "/photos/" + encodeURIComponent(p.id), { method: "DELETE" }); if (!r.ok) throw new Error(r.status); setStatus("ok", "Photo supprimée"); ping(); } catch (e) { setStatus("ko", "Suppression non transmise (" + e.message + ")"); } }
 }
 async function compress(file, max) {
   const url = URL.createObjectURL(file); const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
