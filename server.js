@@ -63,8 +63,10 @@ http.createServer(async (req, res) => {
       return fs.createReadStream(path.join(__dirname, "mobile", "index.html")).pipe(res);
     }
     if (req.method === "GET" && req.url.startsWith("/demo/")) {
-      const f = path.join(__dirname, "demo", path.basename(decodeURIComponent(req.url.slice(6).split("?")[0])));
-      if (!fs.existsSync(f)) return json(res, 404, { error: "not found" });
+      const rel = decodeURIComponent(req.url.slice(6).split("?")[0]).replace(/\\/g, "/");
+      if (rel.includes("..")) return json(res, 400, { error: "bad path" });
+      const f = path.join(__dirname, "demo", ...rel.split("/"));
+      if (!fs.existsSync(f) || !fs.statSync(f).isFile()) return json(res, 404, { error: "not found" });
       const types = { ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".txt": "text/plain; charset=utf-8", ".pdf": "application/pdf", ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document" };
       res.writeHead(200, { "Content-Type": types[path.extname(f).toLowerCase()] || "application/octet-stream" });
       return fs.createReadStream(f).pipe(res);
