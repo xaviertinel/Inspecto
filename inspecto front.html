@@ -474,10 +474,34 @@ const storage = (() => {
 })();
 const ls = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
 
-/* ---------- ai : appels réels à Claude via la capacité "sample" ---------- */
+/* ---------- ai : appels à Claude via le serveur local (server.js → API Anthropic) ---------- */
+const blobToB64 = (b) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res({ media_type: b.type || "image/jpeg", data: r.result.split(",")[1] }); r.onerror = rej; r.readAsDataURL(b); });
+const extractJson = (s) => { s = s.replace(/```(?:json)?/g, ""); const a = s.indexOf("{"), b = s.lastIndexOf("}"); return JSON.parse(a >= 0 && b > a ? s.slice(a, b + 1) : s); };
+const localSampler = (() => {
+  async function call(messages, opts = {}) {
+    const images = opts.images ? await Promise.all(opts.images.map(blobToB64)) : undefined;
+    let r;
+    try { r = await fetch("/api/sample", { method: "POST", headers: { "content-type": "application/json" }, signal: opts.signal, body: JSON.stringify({ messages, modelTier: opts.modelTier, images }) }); }
+    catch (e) { throw e.name === "AbortError" ? { code: "cancelled" } : { code: "unavailable", message: e.message }; }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw { code: d.code || "api_error", message: d.error || r.statusText };
+    opts.onText?.({ text: d.text });
+    return { text: d.text };
+  }
+  const s = (messages, opts) => call(messages, opts);
+  s.json = async (prompt, opts = {}) => {
+    const { text } = await call(prompt, opts);
+    try { return extractJson(text); } catch (e) {
+      const retry = await call([{ role: "user", content: prompt }, { role: "assistant", content: text }, { role: "user", content: "Ta réponse n'est pas un JSON valide (" + e.message + "). Réponds UNIQUEMENT avec le JSON corrigé, sans prose." }], { ...opts, images: undefined });
+      return extractJson(retry.text);
+    }
+  };
+  s.limits = async () => ({ images: { maxCount: 5 } });
+  return s;
+})();
 const ai = (() => {
   let samplerP = null;
-  const get = () => { if (!samplerP) samplerP = (window.claude?.use ? window.claude.use("sample") : Promise.resolve(null)).catch(() => null); return samplerP; };
+  const get = () => { if (!samplerP) samplerP = Promise.resolve(localSampler); return samplerP; };
   async function available() { return !!(await get()); }
   async function text(prompt, opts = {}) {
     const s = await get(); if (!s) throw { code: "unavailable", message: "IA indisponible dans cette vue" };
@@ -492,7 +516,7 @@ const ai = (() => {
   async function canImages() { const s = await get(); try { const l = await s?.limits?.(); return l?.images || null; } catch (e) { return null; } }
   return { available, text, json, canImages, raw: get };
 })();
-const aiErr = (e) => ({ unavailable: "L'IA n'est pas disponible dans cette vue. Ouvrez l'artefact dans claude.ai.", offline: "Hors ligne : l'analyse sera lancée au retour du réseau.", not_granted: "Autorisation refusée pour les appels à Claude.", rate_limited: "Trop d'appels, réessayez dans un instant.", cancelled: "Annulé." }[e?.code] || ("Erreur IA : " + (e?.message || "inconnue")));
+const aiErr = (e) => ({ unavailable: "Serveur Inspecto injoignable. Lancez node server.js puis ouvrez http://localhost:3000.", offline: "Hors ligne : l'analyse sera lancée au retour du réseau.", not_granted: "Autorisation refusée pour les appels à Claude.", rate_limited: "Trop d'appels, réessayez dans un instant.", cancelled: "Annulé." }[e?.code] || ("Erreur IA : " + (e?.message || "inconnue")));
 
 /* Prompts métier. Chaque prompt porte son instruction, ses données et son format. */
 const prompts = {
