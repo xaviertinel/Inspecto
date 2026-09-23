@@ -1,6 +1,8 @@
 [build]
-  publish = "mobile"
+  command = "node build.mjs"
+  publish = "site"
   functions = "netlify/functions"
 
 [functions]
   node_bundler = "esbuild"
+  included_files = ["lib/**"]

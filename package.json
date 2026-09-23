@@ -1,10 +1,11 @@
 {
   "name": "inspecto",
   "private": true,
-  "version": "0.1.0",
-  "description": "Inspecto - assistant de visite d'usine. Page mobile + relais photos (Netlify Functions + Blobs).",
+  "version": "0.2.0",
+  "description": "Inspecto - assistant de visite de site. App web + page mobile + API IA et relais photos (Netlify Functions + Blobs).",
   "scripts": {
-    "start": "node --use-system-ca server.js"
+    "start": "node --use-system-ca server.js",
+    "build": "node build.mjs"
   },
   "dependencies": {
     "@netlify/blobs": "^8.1.0"
