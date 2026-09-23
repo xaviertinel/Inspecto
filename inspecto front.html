@@ -1681,7 +1681,7 @@ function Synthesis({ v, save, onBack, go }) {
   }, [playing, sel, seek]);
   useEffect(() => () => Object.values(urls.current).forEach(u => URL.revokeObjectURL(u)), []);
   useEffect(() => { jump(range[0]); }, [sel]);
-  function downloadReport() {
+  async function downloadReport() {
     const A = v.analysis; const esc = (s) => String(s ?? "").replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
     const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Synthèse · ${esc(v.name)}</title><style>body{font-family:Segoe UI,Arial,sans-serif;max-width:900px;margin:32px auto;padding:0 20px;color:#111}h1{color:#c8102e}h2{border-bottom:2px solid #c8102e;padding-bottom:4px;margin-top:32px}.f{border-left:4px solid #999;padding:8px 12px;margin:10px 0;background:#f6f6f6}.critique{border-color:#c8102e}.majeur{border-color:#e67e22}.mineur{border-color:#f1c40f}.positif{border-color:#27ae60}.sev{font-size:12px;text-transform:uppercase;font-weight:700}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ddd;padding:6px;text-align:left;font-size:14px}.tc{color:#888;font-family:monospace;font-size:12px;margin-right:8px}img{max-width:220px;margin:4px}small{color:#666}</style></head><body>
 <h1>Inspecto · Synthèse de visite</h1><p><b>${esc(v.name)}</b><br>${esc(v.site)} · ${esc(v.place)} · ${esc(frDate(v.date))} · ${esc(t.label)} · Secteur ${esc(v.sector || "")}<br><small>Généré le ${new Date().toLocaleString("fr-FR")} · ${st.user.name}</small></p>
@@ -1692,7 +1692,10 @@ ${A ? `<h2>Verdict</h2><p><b>${esc(A.verdict)}</b> · score global ${Math.round(
 ${v.photos.length ? `<h2>Photos</h2>${v.photos.map(p => `<img src="${p.src}" alt="${esc(p.name)}">`).join("")}` : ""}
 <h2>Transcription</h2>${v.lines.map(l => `<div><span class="tc">${fmt(l.t)}</span>${esc(l.text)}</div>`).join("")}
 </body></html>`;
-    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([html], { type: "text/html" })); a.download = "Synthese-" + (v.name || "visite").replace(/[^\w-]+/g, "_") + ".html"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    const filename = "Synthese-" + (v.name || "visite").replace(/[^\w-]+/g, "_") + ".html";
+    const dl = window.claude?.use ? await window.claude.use("downloads").catch(() => null) : null;
+    if (dl) { try { await dl.save({ filename, data: html }); } catch (e) { if (e?.code !== "declined") st.toast("Téléchargement impossible : " + (e?.message || e?.code || "inconnu")); } return; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([html], { type: "text/html" })); a.download = filename; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   }
   useEffect(() => { if (lang === vLang || v.translations[lang] || !v.lines.length) return; setTrBusy(true);
     ai.json(prompts.translate(v.lines, lang), { modelTier: "quick" }).then(r => save(x => ({ ...x, translations: { ...x.translations, [lang]: r.lines } }))).catch(e => st.toast(aiErr(e))).finally(() => setTrBusy(false)); }, [lang]);
