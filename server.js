@@ -11,14 +11,12 @@ const PORT = process.env.PORT || 3000;
 const KEY = process.env.ANTHROPIC_API_KEY || process.env.MISTRAL_API_KEY;
 const HTML = path.join(__dirname, "inspecto front.html");
 
-if (!KEY) {
-  console.error("Cle API manquante. Lancez :  $env:ANTHROPIC_API_KEY=\"sk-ant-...\"  (ou une cle Mistral)  puis  node server.js");
-  process.exit(1);
-}
-const PROVIDER = KEY.startsWith("sk-ant") ? "anthropic" : "mistral";
+if (!KEY) console.warn("Aucune cle API : le serveur sert l'application et le relais photos, sans IA (utilisez l'Artifact claude.ai pour l'analyse).");
+const PROVIDER = !KEY ? "none" : KEY.startsWith("sk-ant") ? "anthropic" : "mistral";
 const MODELS = PROVIDER === "anthropic"
   ? { quick: "claude-haiku-4-5", default: "claude-sonnet-5" }
-  : { quick: process.env.MISTRAL_QUICK || "ministral-14b-latest", default: process.env.MISTRAL_DEFAULT || "pixtral-12b-2409" };
+  : PROVIDER === "mistral" ? { quick: process.env.MISTRAL_QUICK || "ministral-14b-latest", default: process.env.MISTRAL_DEFAULT || "pixtral-12b-2409" }
+  : { quick: "-", default: "-" };
 
 function readBody(req, limit = 40 * 1024 * 1024) {
   return new Promise((res, rej) => {
@@ -41,6 +39,7 @@ function apiError(r, data) {
 async function sample(body) {
   let messages = typeof body.messages === "string" ? [{ role: "user", content: body.messages }] : body.messages;
   if (!Array.isArray(messages) || !messages.length) throw Object.assign(new Error("messages requis"), { status: 400 });
+  if (PROVIDER === "none") throw Object.assign(new Error("IA non configurée sur ce serveur : exportez la visite et analysez-la dans l'Artifact claude.ai."), { status: 503, code: "unavailable" });
   const images = Array.isArray(body.images) ? body.images : [];
   const model = MODELS[body.modelTier] || MODELS.default;
   const t0 = Date.now();

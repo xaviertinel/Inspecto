@@ -1,7 +1,5 @@
 if (-not $env:ANTHROPIC_API_KEY -and -not $env:MISTRAL_API_KEY) {
-  Write-Host "Cle API absente. Definissez-la d'abord :" -ForegroundColor Red
-  Write-Host '  $env:ANTHROPIC_API_KEY="sk-ant-..."   ou   $env:MISTRAL_API_KEY="..."'
-  exit 1
+  Write-Host "Aucune cle API : mode capture locale (micro, photos, relais telephone). L'analyse IA se fait dans l'Artifact claude.ai apres export de la visite." -ForegroundColor Yellow
 }
 $node = "node"
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) { $node = "$HOME\node\node.exe" }
