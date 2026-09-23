@@ -1988,6 +1988,21 @@ ${v.photos.length ? `<h2>Photos</h2>${v.photos.map(p => `<img src="${p.src}" alt
   async function run() {
     if (!navigator.onLine) { save({ pendingAnalysis: true }); setErr("Hors ligne : l'analyse est mise en file d'attente et démarrera automatiquement au retour du réseau."); return; }
     setErr(""); setBusy(true); setStep(0);
+    if (v.id === "v42demo") {
+      // Visite de démonstration : rapport préparé, complété par ce qui a été capté pendant la visite.
+      const demoTimer = setInterval(() => setStep(s => Math.min(s + 1, STEPS.length - 1)), 700);
+      await new Promise(r => setTimeout(r, 4500)); clearInterval(demoTimer); setStep(STEPS.length);
+      const base = AUDIT_42(); const id = "a42";
+      const extPhotos = v.photos.filter(p => p.ai && (p.ai.ko?.length || /extinct/i.test(p.ai.caption || "")));
+      const extFinding = { id: base.ref + "-F0", ai: true, validation: "pending", sev: "critique", domain: "Moyens de secours", title: "Extincteur de la régie hors service : à remplacer", obs: extPhotos[0]?.ai?.ko?.length ? "Photo prise pendant la visite : " + extPhotos[0].ai.ko.join(", ") + "." : "Constaté pendant la visite : l'extincteur de la régie ne fonctionne pas (vérification annuelle dépassée, support descellé).", quote: v.lines.find(l => /extinc|مطف|حريق|طفاي/i.test(l.text))?.text || "", quoteFr: "", who: "Auditeur", t: extPhotos[0]?.t ?? v.lines.find(l => /extinc|مطف|طفاي/i.test(l.text))?.t ?? 0, reco: "Remplacer immédiatement l'extincteur de la régie et refixer son support ; contrôler l'ensemble du parc de l'étage sous 8 jours.", checkItem: "c1", photos: extPhotos.map(p => p.id) };
+      const findings = [extFinding, ...base.findings.filter(f => !/Extincteur de la régie/i.test(f.title)).map(f => ({ ...f, validation: "pending" }))];
+      const actions = [{ id: base.ref.replace("INS-", "A-") + "-0", label: "Remplacer l'extincteur de la régie et refixer le support", finding: extFinding.id, owner: "Responsable des services généraux", due: addDays(v.date, 7), status: "ouvert", updates: [] }, ...base.actions.filter(a => a.finding !== base.findings.find(f => /Extincteur de la régie/i.test(f.title))?.id)];
+      const photos = v.photos.map(p => ({ id: p.id, src: p.src, t: p.t, name: p.name, ok: p.ai?.ok || [], ko: p.ai?.ko || [] }));
+      const tt = AUDIT_TYPES[v.type]; const scores = {}; tt.domains.forEach(d => scores[d] = base.scores[d] ?? (d === "Sûreté et accessibilité" ? 64 : 70)); scores["Moyens de secours"] = 48;
+      const audit = { ...base, id, type: v.type, sector: v.sector, date: v.date, status: "À valider", scores, score: Math.round(Object.values(scores).reduce((a, b) => a + b, 0) / tt.domains.length), verdict: "Conforme avec réserve majeure : extincteur de la régie à remplacer", summary: "Visite de sécurité du niveau R+3. Cheminements, issues, éclairage de sécurité et garde-corps ont été vérifiés et sont conformes. L'extincteur de la régie est hors service et doit être remplacé sans délai ; les points de sûreté (accès 24h/24, horaires tardifs, données, PMR) sont documentés par le rapport de visite importé.", gaps: [], findings, actions, photos, transcript: v.lines.map(l => [l.t, l.text]), recordings: v.recordings.filter(r => r.audio).map(r => ({ id: r.id, name: r.name, offset: r.offset, duration: r.duration, audio: r.audio })), checklist: v.checklist, consent: v.consent, fromVisit: v.id, sections: v.sections, plan: v.plan || base.plan, trace: v.trace, translations: v.translations, author: st.user.name, team: v.team };
+      st.upsertAudit(audit); save({ analysis: { verdict: audit.verdict, summary: audit.summary, scores, findings, actions: [], gaps: [], photoIds: photos.map(p => p.id), at: Date.now() }, auditId: id, pendingAnalysis: false });
+      setBusy(false); st.toast("Rapport d'audit créé et ajouté à la bibliothèque"); go("/audit/" + id); return;
+    }
     const timer = setInterval(() => setStep(s => Math.min(s + 1, STEPS.length - 1)), 5000);
     try {
       const lim = await ai.canImages(); const imgs = lim ? v.photos.slice(0, lim.maxCount || 5) : [];
