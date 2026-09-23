@@ -1,6 +1,6 @@
-if (-not $env:ANTHROPIC_API_KEY) {
-  Write-Host "ANTHROPIC_API_KEY absente. Definissez-la d'abord :" -ForegroundColor Red
-  Write-Host '  $env:ANTHROPIC_API_KEY="sk-ant-..."'
+if (-not $env:ANTHROPIC_API_KEY -and -not $env:MISTRAL_API_KEY) {
+  Write-Host "Cle API absente. Definissez-la d'abord :" -ForegroundColor Red
+  Write-Host '  $env:ANTHROPIC_API_KEY="sk-ant-..."   ou   $env:MISTRAL_API_KEY="..."'
   exit 1
 }
 $node = "node"

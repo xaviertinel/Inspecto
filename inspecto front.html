@@ -207,6 +207,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 window.LOGOS={lb:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAAA1CAYAAAAwCDJsAAATHklEQVR42u2de5RV1X3HP8PwfskAgyMiL1HqC40mQgVLiCZRAo0iyzbG2ASTrEZt0rQaTWziKzFNNE3apGbZpFXaEKpUsJoQ0aVCpFEjgigG8BERDQMCDswTZgamf/x+N5y5nv04555z7h0437X2WjD3PPbZ+7d/+/feVcCvKA0HgRagHngVWAe8CDSRoxwYBnwD+ARwNLAH+AXwdeDNfHiMOA74MVAd494DSu/1wCbgBWAD0NqDvv8Y4GbgYmAksBd4RGnp1cN54rsSbh3AZuAHwOn5usqc+T1pmJeNwPH5EBlxcoJrYD/wMnAHcFoP+PY64HnDt7wO/EnOAOO1VmWER+XrKxN82zEfy4CqfJhCcRLQnsIaaFHJsq6Cv/0uxzc8dDjTTVcG7WlgbL7GUsUAVVVs89Ccz0PmDLDQNgPTKvC7B6tpxNb3RmBMBc/dV4AVqrIH2wrg+kpggF3Ab4GafJ2lhlHAbo95OCsfqrIwwC5gZwUywdGIndjW7wMVbs66z9L3+2039sqwkx8AbsvXWWpoAt51XNOiizBHeTASWIQ4HCoFjYjDw0U3uyt4XDti/kZvx4PfARoc11QDQxCPowufBe4GXsrXQuJoA5YAX7Vc8yjwVj5UsbCN8MiGKqAf4oDysXVPVEHgsxXyXc1IlMBVlmueBP5wuE6sTfT9kk6urfXXnW0G8O8qLtueeUe+llLDMGClYdw36eLLEU8FvtSyBgYjNrKP6hpoc6yBfVSWd7gOWGvo6++ByRU+dz+zjPWiUhjgVTE6c7WDCa7zkDxzxMdQ4CYkFnM7Ynz/F+DYfGhKYoAXRXjWTOBtx9r6ToV9fy3wXSR8ZzvwCuK9Ht8D5i41Bnh1zA49YnlmQ4XZQA5X9AFGIN7hHKUzwIsjPu/DSDyg6XkvVKgg0K8H0k1sBpjWBDyg6kAYBusA18d89mCVZmqBgSptNiL2ynol4iTRV1WEUWrjqUYMq43ALn1vW8YTXq39QtWprpBrOkjfcF2nc1GD2MKaEFvZ20iGUNIYhXgthyvttgA79H37KmxRPqbtY4bfj9dv2RrhmYNUeKjVdQBiwyvQfhKZJ/u1ZUk3jQG66YrxvM6Yv6XGALc4Fm+/iM8bpoR0EfB+HcD+Rdc0KTH9BlgKPI7DA+RYaOcDFwJnqn1nCN2DQQtxdfW6my/XFsXLej4w1/Db66q6FnAGMBsJoxirC6BDx+X3es1wxAnS1/DMHwKvhfz9dGCB4Z5mJMC6Wf8/Tu1hc5HsieFF49KI2BuXAfcogyoFY4D5+r7TdPMMRi+0IXFsjyH2t/X6988Dpxie+TTw3xkwweUWBljYyF0McITO+1ylxdEh0lmrMpA1wMNIemtDhH7WAjdY+ME/B2gsiLOAKwz3NAK3B4SD8cBfAHOUbmqK6Gav0s0DwEJl6iZ8ke5ZTbbQoqna/zCsTksFnm15ZrsOgK84/je6aOMEX8+O2O8TkcyVbcSL83pLCWmg5/v+AXvcJIjjYnFA0gu2g6q6FTBB/2Z65nmGflxquadJJd8BSK7ozgjjsQWYF5OGhgK3KAONknVxq26yyy3XLcxABQa4wNHf2Y7v/yruIGWT4+K6gJToQ/e2551ruO9Tlnv2qMQ6CPF674rY/z+39PdZkonL/ElaDPBr2INBaz2eMRlzXqtvOwDcqfYwG4boJDUkNLCrVFJy4XrLMx7T3cu2APbTPU9zvEpqpus/aOjHJZZ7/qCS1OMxx6JdF0oUvA9zbqovYS93EX4GDPA8Rz/nGO6brlpFqXS4RmnIhROwe66nG+77hOWeN5VuVhE/n/ovDe9dldA6/dc0GOAQJPHe9MyncOcVTlNpKqkI/P+0MMEpmEMASmnrced/Xu/YBbd6EEnaDPBdpLJJKWPRiH/YxyxVf5IoSFBuBniZo4+zDEylMUE63KPzmzUD3IV4lEvt+0lpMkBXJkhnxAkfocRlqx7xoMPQearaj5LMPfyUqm8mNfvUFOw/U9TmFjfbZgJSoqncqLHY0qJsird4XHcGkrpUm0C/+1bA2M2w/NaBhJsEMQ+4V8crKRyFeEnnZPztIyKYumx9vznNTrqcIJNUhLZJbFX6sWfrjjDJcu12nQyb3eO/8Kuc0am7Vm/8XPbXIeE5TxX9/Tkk/unGFMZ3vtqBlpdp/ioJs3U332iZ+3uQoPrDAcc6JK96umflnAr8NCXG3R/4D7Xlbe5h4zhXecprRUJLEujrWkDXaksKX8PuFbxRpQATuoBfqpSwXkXkvmpvmw38lTLjMPRRKeTDahsM4ru6+4aJ21sRb9Ea/Xe7GpcnqUo5E3sRzWsQr1xXQmPYgnjMOnTzOZgxQbYiVTZWqp2nWhfv5apKYZG0P2JhgNc65r6Ap3Qj26xjcJyqkheowb0SMBhJ+RxlueYZDnnW+6i2UOMx948htvGtAbPHLKVrmyBQi0QVzA6h/yzQovO2Uhl/tWpJl2OvUzlAvy3IAG/nUCxxF3ClCmBh+C0SHRAmxL3ssgEm1dqBbzkG6ETE42h6Rj12zxCqetuM5weAcwz3zqF7BsuzwCc9iPJ8tdfZvKjjYtgAg61NpaM5qhoP00VWUyQFpmEDDLaVFiZVi9tptdhw71jcDqiCZ7DKYnJ4lAjev4g2QJ+Igv7K5H/j0YePe9rSCm0F9oosZwJPeDxnXkY2wGB7XOcnDEfrpma7f6Fj3O8t4d5MGOBq3hu3V4zvY88e8S0jNAl7qMb3Lffep1LlNRHF7Pc7mPf8EhjgVuDPPPuRJgN8UtVUG052vP8ZAwP7uuPdrzmky6C08EBKDPB+JMTmtpB2JxJX+Dv8vbP9AmaMZz02jv4e3z/Q4/t/HaKxpMkAH8UdjnO6ahY2x6kNqaXCJdUO6u401mLstHk8r4sobn/P8qy1FpV1jGWncmGh5Z23xmSArZhjsLJkgHtUQveBTQrbHLKx9FFzhs2bOzOi8f3VFBhgkkdGBOMxp2HPnX/JY+MJogYJKLa9/30ZMcDd+BfgsGkPGxz27tgMMKt6gFVqp3jY4OD4AGaP51vAjyK+72HLbxMwl+56GykiYEO1EmSdMpwTkJjFLZZ7xsUctyUeu18WuB9JjvfBGpvROYSQJxtsrwUsRcIefLEb+McKNurfpCphARc61uFNSFiMLxosG25B4rwgo29dTHgGSRiej0g3iSBrL+IUpMLE/CJDrC1coI/u2FHOJLDZ7QrMa5sn4z5BVdyz1MY4Bkn/GqQTU63X2Rwhw2KO188rZNE+GOHatyM++wzsger3xOzvt/CrUZklblMDfhDTLde/QrwIgod0Qx5v+H1GRt/7vynSTSYMcCHidfKxPUzQyZzuYAYXqTF7WeBvtiDZOsQZkRR64XZsjEKi0C9VdWFgie+M47bfq6J/udFGtNCJqIn0Nulvp5osomK33ndhhTC+Qopk8YY2CLsHdBXxijw0q+ZgYoAnKE2mWfSgJYLWAOkXYIjFAP8PDyNiET6IuNttTO1vdXc4qNJT1geuVFvG4yokJCPJIOQ4J2rtwl3iPgu0RFTBomK0g3HEHYONFcAA39D1cxfh1Y9qVJswYX0J716POQVxhGolO1L89mZ6wNngLgYYJyhzJVIBY5VKhWGYhth+Nqr6k/WxmWExecOReKGLKmRuWki+tFccHCS5GMYw2DyEDcSPc9yVcD9bMVcXKjhr9irTXqfrYDX28zYGY/fu1pfQX9u9/Uk/ZvIg2ceoJs4ASxH5byfc21ZgrFOVAfZyqMxpqXXFKvxiJIarUtDZEwioTNJx3E2uFHwRCeS1McCWiCprb+wOkI4S+tvhGPP8fGjSdYKsUBHYlNdYyBM8UOJExyGMYrXqhgjMr1lVh8KBUU1K9CMx137LYZd0TRimCzUOMxuRcD93kvzBQPt1ozOtw1KkNNu9B4ie558zwIjYrWqIiQHWBhiSrXjjT1Q1TQoH6J5WcxxSc9CGvUiA6UNImMwO3lt9d0bOAGPB5o0fg9jJ4tgBkz7IJw0tpVE3AJMaPKGEZ09wbDpNOemlHwbT5fnuLZhT1PojkfJpYQ72MJXngM+geYMW5IcOxYPNwzwKCZN5IuIzh9EzDoBv0M3UJK1OLeHZZ1t+q8d9FvARgTQDoWuwV/YI7kC2IMhZpOskme4g0Ms8mB+UXjLqSMU6izpWhbnkug0fw+5drhS0O2hrBvEOEBsL/Knl95coT0GEI4oBnoc9hefNwL9XWSZkDPDpmH0YgtQTszFiW7jLasLP0AhbqLNycoqFTdjjxS51SDPFGIpUHeopsEm3I5CzTaLiCw6h4YkjiL4Gl4MBHu1BhOsC/34Re8zTN/ArlVT84fcgqUS/xBxwagtS9j1VbWrERVoudFXA+4v7sB9JdzNhAFLLzicuszdSVurkHrRAH+FQWaww/B2SieSLc5BiHibswS+5odLppliSNuFk2xp3McA43tmpiLPAZoTeTvec0Q7MITMgMXrLHOpq8Uc/zKGClGcjSfphNhWbF/I03OECA4E7sMdMjqqQxTa0zO8fZBine7Eb5U9RRmGTso9HqvlcQc/CFuy560P1u87yXHuLHVLPMqJ7s4eUeYyGONaXLeZxEvA5245pwzT8jKUDkIT/6UjpJlfq1xLe69lbBHwJczn98crE7laJYBPdbUd99N5PqtpQnO42EcmrXED3HMVXgQ8Z3nkm8PdIuSOTreWHuHMrT0HqsC1NmVA6HbadT+vun+YZurbduBapIPLjor+/DvybjrVtU3sUCa9ajjhPOjlUEPXjJB/6khXuVPowrZuJOm93IpVPtoasjSt0/GybXCvwTwZBx0Y3n0GqtbSXiW7qkCM1f2r43ZUy+j3EK74EiTqoQhxlxwTFy6zabswu+rnYSwMV2j7k1KylSAn9B1WF3udxbyfdS5XP97jnQV24Z2ubh5w1Wh/hu/chR3UGmaWtHNbzRA9WHYr7MKm1SkjBftjKYe0gWpn6j+AujvuIjt/IIil/Y0Y0mNWhSFGZoE/f30XyfH+u0t5qVWt97v2m4d01HrS8Rsct6FyxlcPaRrQiIHNwH3L1K6SeZ3H64ATsZeCKD+hqUj7QVQ4GeKVjIL6T8vtfK5IyhxLv3OG47ZIUGWAV/sdXXpMSAxwXgRgnhWgce45QBjgYv0rScduTmIt6VOGuylxon0+JAR6PvShqsKr7+JD7H4gzLlnVAyzgZtxBzTeqTSgNbNCdZlPgb42IoyQrpJne1kX3KjsudTkNbEWKaLjQFmLYfgY5IyKJ4gs9LcyjWRnKyyk8+wUd19YKpps3dP5daCXcIfJNy/cZkRUD3KWGyFs8B/hzqrcniaXI4SqbQn5bhL1Uvi9+p/ascuJnlPfkry6kIGlcBvQL3aRK+YYl9MxQjzeRGMYki+A+oePpcnwsLDPtHgS+XYKAsA74MjE81mnb++7G7zyHMFyCvby3r8q7wEOd7KWS4P6Y73kKiVk83yHKz/NUgdcSP2F9KlJg0tbfv/ZUgd8h3lGVXw7YWUzl/m218EYBPyDaIeGdiIPFdTaISQXuKKMKHMQgZQbNJdB9I1IZekCE957jYQtc4KkC1xOvEPBXHH4A2yFjICXAotjmEz357V2Vgu5TKW5sAsRQo4tpfcSF8ByS4zs84vvOReIGfRnhGzppQfvKh9Q4HWZTCp5sd4PluesorWLHJDUlmA6I+kLgWpsjaCfxz+q9ECkLFbYhdDgYYAGT1XTynIEZHlBmv4juZ56ssHzTXQYG2Em009TSxhTEO74jAu3X6/fFzUyajDgWd+G24V9m6cd24ldCn4Mc3hR2Tsk+3EdMjFWVeAN2x2hTFf6xdVgMqB26WzXowKXhLu+HxELNRKo0j9MB7q3va1BmtEalsRdKtFdMUZV5KhKGcJRKiW0qFW1ADMsrCS/mUDgv90S9tw3x0K7lUODrGDXodoWMabN+Q6k4BgkhOVbHsFM3qmeVSEHCR04y9KNdmXEpFXsm6ziM1Pnap+/+Nf6VgKuRkJexgec064LfUjQH/ZDgetNBTreG2H0HIsH2VQYa34h/YHzSqEO89jN0LutUSuxC4li3q+1wtbZ3EnjnaH3XaB3PQtGSpwPPr9W5NdHN2hLWYFUR3VQr3WzT9d3uyTMmIl7ikfr/NsTRtpN0C8Jmgn5KuH1Tfk8VUpRhIPbzK3IkA1cuqwvTHers5T18fHorLQ4g+1qaOXLkSBFnqt23KabdrRcSKG0z1eSFK3LkyFFxuJjuNst25HQ3X1tSb+xnQhcCenvnQ50jR45KwrWYA5E3I0UBJhJuo+uHpMOtwO0kuDof6hwF5OcC5Cg3BiGnCC7wuLYJcUa8gjjbqhAnz6n4VYDZiDi18mrIOXLkqAgM9pTcSm37kRjNHDly5KgoDEGyN9JifgeR855z5MiRoyLRB0mV9KnoEzUj4sp8eHPkyNETcC6Sv5oE81tJz6jUnSNHjhx/RDUwG/gfzClZptaMFE6dTx7uksOB3Auco9IxAakyPhNJTzwOiQvsy6GiCtuRHPRVSOXkF/Nhy+GD/wciewaX4Hb1qAAAAABJRU5ErkJggg==",lw:"data:image/png;base64,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",sb:"data:image/png;base64,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",sw:"data:image/png;base64,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"};
 </script>
@@ -562,7 +564,7 @@ Transcription : ${(audit.transcript || []).map(l => `${fmt(l[0])} ${l[1]}`).join
 /* ---------- speech : reconnaissance vocale navigateur, sinon script démo ---------- */
 function createSpeech(lang, onLine, onPartial) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const code = { fr: "fr-FR", en: "en-US", es: "es-ES" }[lang] || "fr-FR";
+  const code = { fr: "fr-FR", en: "en-US", es: "es-ES" }[lang] || navigator.language || "fr-FR";
   let rec = null, running = false, demoTimer = null, demoIdx = 0, mode = "demo";
   function startDemo() {
     mode = "demo";
@@ -1174,7 +1176,8 @@ function ChatDrawer({ audit, onClose }) {
    APP DE VISITE · mobile d'abord, hors ligne (IndexedDB)
    Écrans : accueil → formulaire → consentement RGPD → capture → synthèse
    ========================================================================= */
-const LANGS = { fr: "Français", en: "Anglais", es: "Espagnol" };
+const LANGS = { auto: "Détection auto", fr: "Français", en: "Anglais", es: "Espagnol" };
+const serverInfo = fetch("/api/info").then(r => r.json()).catch(() => ({}));
 function newVisit(p) {
   return { id: uid(), code: shareCode(), name: "", site: "", date: today(), place: "", gps: null, lang: "fr", type: "qualif-indus", team: [], consent: null,
     recordings: [], lines: [], photos: [], trace: [], checklist: {}, followup: null, translations: {}, sections: null, analysis: null, pendingAnalysis: false, auditId: null, createdAt: Date.now(), ...p };
@@ -1313,22 +1316,64 @@ function Consent({ v, onBack, onOk }) {
   return <div className="visit"><VTop onBack={onBack} title="Consentement" sub={v.name} />
     <div className="v-center"><div style={{ width: "100%", maxWidth: 520 }} className="grid">
       <div className="row"><Icon n="shield" s={26} /><div><div className="eyebrow">RGPD</div><div className="h2">Informer les personnes enregistrées</div></div></div>
-      <div className="card card-pad"><div className="eyebrow" style={{ marginBottom: 8 }}>Message à lire ou montrer · {LANGS[v.lang]}</div><p style={{ margin: 0, fontSize: 16 }}>{text[v.lang]}</p>{v.lang !== "fr" && <p className="faint" style={{ fontSize: 13, marginBottom: 0 }}>{text.fr}</p>}</div>
+      <div className="card card-pad"><div className="eyebrow" style={{ marginBottom: 8 }}>Message à lire ou montrer · {LANGS[v.lang]}</div><p style={{ margin: 0, fontSize: 16 }}>{text[v.lang] || text.fr}</p>{v.lang !== "fr" && text[v.lang] && <p className="faint" style={{ fontSize: 13, marginBottom: 0 }}>{text.fr}</p>}</div>
       <div className="field"><label>Personnes présentes (noms ou fonctions)</label><input className="input" value={who} onChange={e => setWho(e.target.value)} placeholder="Ex. Directeur de site, responsable qualité" /></div>
       <label className="row" style={{ fontSize: 14, cursor: "pointer" }}><input type="checkbox" checked={blur} onChange={e => setBlur(e.target.checked)} />Flouter automatiquement les visages sur les photos</label>
       <label className="row" style={{ fontSize: 14, cursor: "pointer", alignItems: "flex-start" }}><input type="checkbox" checked={ok} onChange={e => setOk(e.target.checked)} style={{ marginTop: 4 }} />Les personnes présentes ont été informées et ont donné leur accord oral. L'heure et la liste sont enregistrées dans le rapport.</label>
-      <button className="btn btn-red" style={{ height: 48, justifyContent: "center" }} disabled={!ok} onClick={() => onOk({ at: new Date().toISOString(), participants: who, text: text[v.lang], autoBlur: blur })}>Démarrer le mode visite</button>
+      <button className="btn btn-red" style={{ height: 48, justifyContent: "center" }} disabled={!ok} onClick={() => onOk({ at: new Date().toISOString(), participants: who, text: text[v.lang] || text.fr, autoBlur: blur })}>Démarrer le mode visite</button>
     </div></div></div>;
 }
 
 /* ---------- Capture ---------- */
+if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+async function extractDocText(file) {
+  const n = file.name.toLowerCase();
+  if (n.endsWith(".pdf")) {
+    const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise; const out = [];
+    for (let i = 1; i <= pdf.numPages; i++) { const c = await (await pdf.getPage(i)).getTextContent(); out.push(c.items.map(x => x.str).join(" ")); }
+    return out.join("\n");
+  }
+  if (n.endsWith(".docx")) {
+    const z = await JSZip.loadAsync(file); const xml = await z.file("word/document.xml").async("string");
+    return xml.replace(/<\/w:p>/g, "\n").replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'");
+  }
+  return await file.text();
+}
+const splitSentences = (text) => text.split(/(?<=[.!?;])\s+|\n+/).map(s => s.replace(/\s+/g, " ").trim()).filter(s => s.length > 2);
+
+function CameraSheet({ onShot, onImport, onClose, count }) {
+  const vid = useRef(null); const [err, setErr] = useState(""); const [flash, setFlash] = useState(false);
+  useEffect(() => { let s; navigator.mediaDevices?.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 } }, audio: false }).then(st => { s = st; if (vid.current) vid.current.srcObject = st; }).catch(e => setErr("Caméra indisponible (" + e.message + "). Importez un fichier image.")); return () => s?.getTracks().forEach(t => t.stop()); }, []);
+  function shoot() {
+    const el = vid.current; if (!el?.videoWidth) return;
+    const c = document.createElement("canvas"); c.width = el.videoWidth; c.height = el.videoHeight; c.getContext("2d").drawImage(el, 0, 0);
+    c.toBlob(b => onShot(new File([b], "photo.jpg", { type: "image/jpeg" })), "image/jpeg", .92);
+    setFlash(true); setTimeout(() => setFlash(false), 180);
+  }
+  return <Modal onClose={onClose} wide>
+    <div className="row between"><div className="h2">Photo</div><button className="icon-btn" onClick={onClose}><Icon n="x" /></button></div>
+    <div style={{ position: "relative", marginTop: 12, background: "#000", minHeight: 200 }}>
+      <video ref={vid} autoPlay playsInline muted style={{ width: "100%", display: "block", maxHeight: "60vh", objectFit: "contain" }} />
+      {flash && <div style={{ position: "absolute", inset: 0, background: "#fff", opacity: .8 }} />}
+      {err && <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", color: "#fff", fontSize: 14, padding: 20, textAlign: "center" }}>{err}</div>}
+    </div>
+    <div className="row wrap" style={{ marginTop: 12 }}>
+      <button className="btn btn-red" disabled={!!err} onClick={shoot}><Icon n="cam" />Prendre la photo</button>
+      <button className="btn" onClick={onImport}><Icon n="img" s={16} />Importer une image</button>
+      <div className="spacer" /><span className="mono faint" style={{ fontSize: 12 }}>{count} photo{count > 1 ? "s" : ""}</span>
+      <button className="btn btn-dark" onClick={onClose}>Terminer</button>
+    </div>
+  </Modal>;
+}
+
 function Capture({ v, save, onBack, onSynth }) {
   const st = useStore(); const t = AUDIT_TYPES[v.type] || AUDIT_TYPES["qualif-indus"];
   const [state, setState] = useState("idle"); // idle | rec | paused
   const [segs, setSegs] = useState([]); const [tick, setTick] = useState(0); const [partial, setPartial] = useState("");
   const [gpsOn, setGpsOn] = useState(false); const [sheet, setSheet] = useState(null); const [aside, setAside] = useState("grid"); const [asideMobile, setAsideMobile] = useState(false);
   const [level, setLevel] = useState(0); const [mode, setMode] = useState("");
-  const recRef = useRef(null); const speech = useRef(null); const media = useRef({}); const fileRef = useRef(null); const segsRef = useRef(segs); segsRef.current = segs;
+  const recRef = useRef(null); const speech = useRef(null); const media = useRef({}); const fileRef = useRef(null); const docRef = useRef(null); const segsRef = useRef(segs); segsRef.current = segs;
+  const [transcribing, setTranscribing] = useState(false);
   const vRef = useRef(v); vRef.current = v; const covAt = useRef(0); const recId = useRef(null);
   const elapsed = elapsedOf(segs) + (0 * tick);
   const baseT = v.recordings.reduce((s, r) => s + r.duration, 0);
@@ -1380,6 +1425,33 @@ function Capture({ v, save, onBack, onSynth }) {
     const blob = await stopMedia();
     const rec = { id: recId.current, name: "Enregistrement " + (v.recordings.length + 1), segments: fin, duration: elapsedOf(fin), offset: baseT, at: fin[0].start, audio: blob };
     save(x => ({ ...x, recordings: [...x.recordings, rec] })); setSegs([]); setState("idle"); setPartial(""); st.toast("Enregistrement sauvegardé");
+    const info = await serverInfo; const liveLines = vRef.current.lines.filter(l => l.rec === rec.id).length;
+    if (blob && info.transcribe && (v.lang === "auto" || mode !== "live" || !liveLines)) {
+      setTranscribing(true);
+      try {
+        const r = await fetch("/api/transcribe?lang=" + encodeURIComponent(v.lang), { method: "POST", headers: { "content-type": blob.type || "audio/webm" }, body: blob });
+        const d = await r.json(); if (!r.ok) throw new Error(d.error || r.statusText);
+        const segs2 = d.segments?.length ? d.segments : splitSentences(d.text || "").map((text, i, a) => ({ start: i * rec.duration / a.length, text }));
+        const lines = segs2.filter(s => s.text?.trim()).map(s => ({ t: rec.offset + s.start, text: s.text.trim(), rec: rec.id }));
+        const det = (d.language || "").slice(0, 2).toLowerCase(); const newLang = ["fr", "en", "es"].includes(det) ? det : null;
+        save(x => ({ ...x, lines: [...x.lines.filter(l => l.rec !== rec.id), ...lines].sort((a, b) => a.t - b.t), lang: x.lang === "auto" && newLang ? newLang : x.lang }));
+        st.toast("Transcription terminée" + (newLang ? " · langue détectée : " + LANGS[newLang] : ""));
+      } catch (e) { st.toast("Transcription serveur impossible : " + e.message); }
+      setTranscribing(false);
+    }
+  }
+  async function addDocs(files) {
+    for (const f of files) {
+      try {
+        const text = await extractDocText(f); const sentences = splitSentences(text);
+        if (!sentences.length) { st.toast("Aucun texte trouvé dans " + f.name); continue; }
+        const id = uid(); const t0 = baseT + elapsedOf(segsRef.current);
+        const doc = { id, name: f.name, segments: [], duration: Math.ceil(sentences.length * .01) + 1, offset: t0, at: Date.now(), doc: true };
+        const lines = sentences.map((text, i) => ({ t: t0 + i * .01, text, rec: id }));
+        save(x => ({ ...x, recordings: [...x.recordings, doc], lines: [...x.lines, ...lines].sort((a, b) => a.t - b.t) }));
+        st.toast(f.name + " : " + sentences.length + " phrases importées");
+      } catch (e) { st.toast("Lecture impossible : " + f.name); }
+    }
   }
   async function addPhotos(files) {
     for (const f of files) {
@@ -1428,17 +1500,21 @@ function Capture({ v, save, onBack, onSynth }) {
         <div className="live-line">{lastLine && <>« {lastLine} »</>}</div>
         <div className="v-tools">
           <button className={"v-tool" + (gpsOn ? " on" : "")} onClick={() => setGpsOn(!gpsOn)}><Icon n="pin" />GPS{gpsOn ? " actif" : ""}</button>
-          <button className="v-tool" onClick={() => fileRef.current?.click()}><Icon n="cam" />Photo</button>
+          <button className="v-tool" onClick={() => setSheet("camera")}><Icon n="cam" />Photo</button>
+          <button className="v-tool" onClick={() => docRef.current?.click()}><Icon n="report" />Document</button>
           <button className="v-tool" onClick={() => setSheet("media")}><Icon n="img" />Médias{v.photos.length + v.recordings.length > 0 && <span className="badge">{v.photos.length + v.recordings.length}</span>}</button>
           <button className="v-tool" onClick={() => { setAside("grid"); setAsideMobile(true); }}><Icon n="list" />Grille<span className="mono" style={{ fontSize: 10 }}>{covered}/{t.items.length}</span></button>
         </div>
-        <input ref={fileRef} type="file" accept="image/*" capture="environment" multiple hidden onChange={e => { addPhotos([...e.target.files]); e.target.value = ""; }} />
+        <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={e => { addPhotos([...e.target.files]); e.target.value = ""; }} />
+        <input ref={docRef} type="file" accept=".pdf,.docx,.txt,.md" multiple hidden onChange={e => { addDocs([...e.target.files]); e.target.value = ""; }} />
+        {transcribing && <div className="row mono faint" style={{ fontSize: 12, marginTop: 12 }}><span className="spinner" style={{ width: 12, height: 12 }} />Transcription et détection de la langue…</div>}
         {state !== "idle" && <div className="mono faint" style={{ fontSize: 11, marginTop: 12 }}>Les photos seront liées à {state === "rec" ? "REC " + fmt(baseT + elapsed) : "la position EN PAUSE"}</div>}
       </div>
       {Aside}
     </div>
     {sheet === "share" && <ShareSheet v={v} onClose={() => setSheet(null)} />}
     {sheet === "media" && <MediaSheet v={v} save={save} onClose={() => setSheet(null)} />}
+    {sheet === "camera" && <CameraSheet count={v.photos.length} onShot={f => addPhotos([f])} onImport={() => fileRef.current?.click()} onClose={() => setSheet(null)} />}
     {sheet === "gaps" && <Modal onClose={() => setSheet(null)}><div className="h2">Domaines non abordés</div><p className="muted" style={{ fontSize: 14 }}>Avant de quitter le site, ces domaines de la grille n'ont été ni abordés à l'oral ni cochés :</p>
       <div className="grid" style={{ gap: 6, marginBottom: 16 }}>{uncovered.map(d => <div key={d} className="row" style={{ fontSize: 15 }}><span style={{ width: 8, height: 8, borderRadius: 4, background: "var(--bp-red)" }} />{d}</div>)}</div>
       <div className="row" style={{ justifyContent: "flex-end" }}><button className="btn" onClick={() => setSheet(null)}>Continuer la visite</button><button className="btn btn-dark" onClick={() => { setSheet(null); onSynth(); }}>Aller à la synthèse</button></div></Modal>}
@@ -1495,19 +1571,20 @@ function RecDetail({ v, r, save, onClose }) {
 const STEPS = ["Consolidation des matériaux", "Transcription et traduction", "Vision sur les photos", "Extraction des constats", "Notation par domaine", "Plan d'actions"];
 function Synthesis({ v, save, onBack, go }) {
   const st = useStore(); const t = AUDIT_TYPES[v.type] || AUDIT_TYPES["qualif-indus"]; const online = useOnline();
-  const [tab, setTab] = useState("report"); const [lang, setLang] = useState(["fr", "en", "es"].includes(v.lang) ? v.lang : "fr");
+  const vLang = ["fr", "en", "es"].includes(v.lang) ? v.lang : "fr";
+  const [tab, setTab] = useState("report"); const [lang, setLang] = useState(vLang);
   const [sel, setSel] = useState("all"); const [cur, setCur] = useState(0); const [playing, setPlaying] = useState(false);
   const [busy, setBusy] = useState(null); const [step, setStep] = useState(0); const [err, setErr] = useState(""); const [trBusy, setTrBusy] = useState(false);
   const wide = useWide(1000);
   const total = Math.max(v.recordings.reduce((s, r) => s + r.duration, 0), v.lines.at(-1)?.t || 0, 1);
   const range = sel === "all" ? [0, total] : (() => { const r = v.recordings.find(x => x.id === sel); return r ? [r.offset, r.offset + r.duration] : [0, total]; })();
   const lines = v.lines.filter(l => l.t >= range[0] - .5 && l.t <= range[1] + .5);
-  const tr = lang === v.lang ? null : v.translations[lang];
+  const tr = lang === vLang ? null : v.translations[lang];
   const txt = (l) => { if (!tr) return l.text; const i = v.lines.indexOf(l); return tr[i] || l.text; };
 
   useEffect(() => { if (!playing) return; const i = setInterval(() => setCur(c => { if (c + 1 >= range[1]) { setPlaying(false); return range[1]; } return c + 1; }), 1000); return () => clearInterval(i); }, [playing, sel]);
   useEffect(() => { setCur(range[0]); }, [sel]);
-  useEffect(() => { if (lang === v.lang || v.translations[lang] || !v.lines.length) return; setTrBusy(true);
+  useEffect(() => { if (lang === vLang || v.translations[lang] || !v.lines.length) return; setTrBusy(true);
     ai.json(prompts.translate(v.lines, lang), { modelTier: "quick" }).then(r => save(x => ({ ...x, translations: { ...x.translations, [lang]: r.lines } }))).catch(e => st.toast(aiErr(e))).finally(() => setTrBusy(false)); }, [lang]);
   useEffect(() => { if (online && v.pendingAnalysis && !busy) run(); }, [online]);
 
@@ -1521,12 +1598,16 @@ function Synthesis({ v, save, onBack, go }) {
       const checks = Object.entries(v.checklist).filter(([, s]) => s === "manual").map(([k]) => k);
       const vv = { ...v, photos: imgs };
       const r = await ai.json(prompts.analysis(vv, t, v.lines, checks), { modelTier: "default", images: imgs.length ? imgs.map(p => dataUrlToBlob(p.src)) : undefined });
-      save({ analysis: { ...r, photoIds: imgs.map(p => p.id), at: Date.now() }, pendingAnalysis: false }); setStep(STEPS.length);
+      const analysis = { ...r, photoIds: imgs.map(p => p.id), at: Date.now() };
+      save({ analysis, pendingAnalysis: false }); setStep(STEPS.length);
+      clearInterval(timer); setBusy(false);
+      st.toast("Rapport d'audit créé et ajouté à la bibliothèque");
+      return file(analysis);
     } catch (e) { setErr(aiErr(e)); }
     clearInterval(timer); setBusy(false);
   }
-  function file() {
-    const r = v.analysis; const id = "v" + v.id; const ref = "INS-2026-" + String(150 + st.audits.length).padStart(4, "0");
+  function file(r = v.analysis) {
+    const id = "v" + v.id; const ref = "INS-2026-" + String(150 + st.audits.length).padStart(4, "0");
     const photos = v.photos.map(p => { const i = r.photoIds?.indexOf(p.id); const n = i >= 0 ? r.photoNotes?.find(x => x.index === i) : null; return { id: p.id, src: p.src, t: p.t, name: p.name, ok: n?.ok || [], ko: n?.ko || [] }; });
     const findings = (r.findings || []).map((f, i) => ({ id: ref + "-F" + (i + 1), ai: true, validation: "pending", ...f, photos: v.photos.filter(p => Math.abs(p.t - (f.t || 0)) < 45).map(p => p.id) }));
     const actions = (r.actions || []).map((a, i) => ({ id: ref.replace("INS-", "A-") + "-" + (i + 1), label: a.label, finding: findings[a.findingIndex]?.id, owner: a.owner || "Directeur de site", due: addDays(v.date, a.days || 30), status: "ouvert", updates: [] }));
