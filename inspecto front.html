@@ -104,6 +104,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--bp-red);border-radius:50%;animation:spin .8s linear infinite;display:inline-block}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:grid;place-items:center;padding:16px;animation:fade .15s}
+.chk-item.flash{animation:chkflash 1.4s var(--ease)}
+@keyframes chkflash{0%{background:rgba(255,61,71,.45);box-shadow:inset 3px 0 0 var(--bp-red)}60%{background:rgba(255,61,71,.18)}100%{background:transparent}}
 @keyframes fade{from{opacity:0}}
 .modal{background:var(--surface);border-radius:4px;max-width:560px;width:100%;max-height:90vh;overflow:auto;box-shadow:var(--shadow-lg);padding:24px}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--surface);border-left:1px solid var(--border);z-index:65;overflow:auto;box-shadow:var(--shadow-lg);animation:slideIn .22s var(--ease);padding-top:env(safe-area-inset-top,0px)}
@@ -1707,16 +1709,34 @@ function Capture({ v, save, onBack, onSynth }) {
         const id = uid(); const t0 = baseT + elapsedOf(segsRef.current);
         const doc = { id, name: f.name, segments: [], duration: Math.ceil(sentences.length * .01) + 1, offset: t0, at: Date.now(), doc: true };
         const lines = sentences.map((text, i) => ({ t: t0 + i * .01, text, rec: id }));
-        // Cochage immédiat par mots-clés (sans IA) : un point est renseigné si le document reprend son intitulé.
+        // Cochage par mots-clés (sans IA) : un point est renseigné si le document reprend son intitulé.
         const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-        const doc0 = norm(text); const add = {};
-        t.items.forEach(it => { if (vRef.current.checklist[it.id]) return; const words = norm(it.label).split(/[^a-z0-9]+/).filter(w => w.length > 4 && !["dans", "pour", "avec", "sans", "entre", "toute", "toutes", "leurs"].includes(w)); const hit = words.filter(w => doc0.includes(w)).length; if (words.length && hit >= Math.min(2, words.length) && hit / words.length >= .5) add[it.id] = "ai"; });
-        save(x => ({ ...x, recordings: [...x.recordings, doc], lines: [...x.lines, ...lines].sort((a, b) => a.t - b.t), checklist: { ...x.checklist, ...add } }));
-        const n = Object.keys(add).length;
-        st.toast(f.name + " : " + sentences.length + " phrases importées" + (n ? ` · ${n} point${n > 1 ? "s" : ""} de grille coché${n > 1 ? "s" : ""}` : ""));
+        const doc0 = norm(text); const add = {}; const quotes = [];
+        t.items.forEach(it => { if (vRef.current.checklist[it.id]) return; const words = norm(it.label).split(/[^a-z0-9]+/).filter(w => w.length > 4 && !["dans", "pour", "avec", "sans", "entre", "toute", "toutes", "leurs"].includes(w)); const hit = words.filter(w => doc0.includes(w)); if (words.length && hit.length >= Math.min(2, words.length) && hit.length / words.length >= .5) { add[it.id] = "ai"; const q = sentences.find(s => { const ns = norm(s); return hit.filter(w => ns.includes(w)).length >= Math.min(2, hit.length) && s.length > 30 && s.length < 220; }); if (q) quotes.push({ text: q, item: it }); } });
+        save(x => ({ ...x, recordings: [...x.recordings, doc], lines: [...x.lines, ...lines].sort((a, b) => a.t - b.t) }));
+        const extra = sentences.filter(s => s.length > 40 && s.length < 200 && !quotes.some(q => q.text === s)).filter((_, i) => i % Math.max(1, Math.floor(sentences.length / 6)) === 0).slice(0, 4).map(text => ({ text }));
+        await readDocument(f.name, sentences.length, [...extra.slice(0, 2), ...quotes, ...extra.slice(2)], add);
         coverDoc(f.name, lines);
       } catch (e) { st.toast("Lecture impossible : " + f.name); }
     }
+  }
+  // Séquence visible de lecture : citations clés qui défilent, puis cases cochées une à une avec défilement et surbrillance.
+  const [reading, setReading] = useState(null);
+  async function readDocument(name, count, quotes, add) {
+    const ids = Object.keys(add); const list = quotes.length ? quotes : [{ text: "Lecture du document…" }];
+    setReading({ name, count, quote: list[0], i: 0, total: list.length });
+    for (let i = 0; i < list.length; i++) { setReading(r => ({ ...r, quote: list[i], i })); await new Promise(res => setTimeout(res, Math.max(900, Math.min(1600, 5200 / list.length)))); }
+    setReading(null);
+    if (!ids.length) { st.toast(name + " : " + count + " phrases importées, aucun point de grille correspondant"); return; }
+    setAside("grid"); if (innerWidth < 1000) setAsideMobile(true);
+    for (const id of ids) {
+      save(x => ({ ...x, checklist: { ...x.checklist, [id]: "ai" } }));
+      await new Promise(res => setTimeout(res, 60));
+      const el = document.querySelector(`.chk-item[data-id="${id}"]`);
+      if (el) { el.scrollIntoView({ behavior: "smooth", block: "center" }); el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); }
+      await new Promise(res => setTimeout(res, 750));
+    }
+    st.toast(`${name} : ${count} phrases importées · ${ids.length} point${ids.length > 1 ? "s" : ""} de grille coché${ids.length > 1 ? "s" : ""}`);
   }
   // Après un import, l'IA parcourt tout le document (par blocs) et coche les points de grille renseignés.
   const [docBusy, setDocBusy] = useState("");
@@ -1815,7 +1835,7 @@ function Capture({ v, save, onBack, onSynth }) {
       {followActs.length > 0 && <><div className="eyebrow" style={{ padding: "14px 16px 6px" }}>Actions à vérifier</div>{followActs.map(a => { const k = "act:" + a.id; return <div key={k} className="chk-item" onClick={() => toggleCheck(k)}><div className={"chk-box" + (v.checklist[k] ? " on" : "")}>{v.checklist[k] && <Icon n="check" s={12} w={3} />}</div><div><span className="mono faint" style={{ fontSize: 11 }}>{a.id}</span><div>{a.label}</div></div></div>; })}</>}
       {byDomain.map(({ d, items }) => { const n = items.filter(i => v.checklist[i.id]).length; return <div key={d}>
         <div className="row between" style={{ padding: "14px 16px 6px" }}><span className="eyebrow">{d}</span><span className="mono" style={{ fontSize: 11, color: n === 0 ? "var(--bp-red)" : "var(--text-3)" }}>{n}/{items.length}</span></div>
-        {items.map(i => <div key={i.id} className="chk-item" onClick={() => toggleCheck(i.id)}><div className={"chk-box" + (v.checklist[i.id] === "ai" ? " ai" : v.checklist[i.id] ? " on" : "")}>{v.checklist[i.id] && <Icon n="check" s={12} w={3} />}</div><div><span className="mono faint" style={{ fontSize: 11 }}>{i.code}</span><div>{i.label}</div></div></div>)}</div>; })}
+        {items.map(i => <div key={i.id} className="chk-item" data-id={i.id} onClick={() => toggleCheck(i.id)}><div className={"chk-box" + (v.checklist[i.id] === "ai" ? " ai" : v.checklist[i.id] ? " on" : "")}>{v.checklist[i.id] && <Icon n="check" s={12} w={3} />}</div><div><span className="mono faint" style={{ fontSize: 11 }}>{i.code}</span><div>{i.label}</div></div></div>)}</div>; })}
     </div> : <div style={{ padding: 12 }} className="grid">
       {[...v.photos.map(p => ({ k: "p" + p.id, at: p.at, el: <div className="row" style={{ gap: 10 }}><img src={p.src} style={{ width: 56, height: 56, objectFit: "cover" }} /><div><div style={{ fontSize: 14, fontWeight: 600 }}>{p.name}</div><div className="mono faint" style={{ fontSize: 11 }}>{fmt(p.t)}</div></div></div> })),
         ...v.recordings.map(r => ({ k: "r" + r.id, at: r.at, el: <div className="row" style={{ gap: 10 }}><div style={{ width: 56, height: 56, display: "grid", placeItems: "center", background: "var(--surface-3)" }}><Icon n="mic" /></div><div><div style={{ fontSize: 14, fontWeight: 600 }}>{r.name}</div><div className="mono faint" style={{ fontSize: 11 }}>{fmt(r.duration)}</div></div></div> }))]
@@ -1869,6 +1889,13 @@ function Capture({ v, save, onBack, onSynth }) {
     {sheet === "share" && <ShareSheet v={v} onClose={() => setSheet(null)} />}
     {sheet === "media" && <MediaSheet v={v} save={save} onClose={() => setSheet(null)} />}
     {sheet === "camera" && <CameraSheet count={v.photos.length} onShot={f => addPhotos([f])} onImport={() => fileRef.current?.click()} onClose={() => setSheet(null)} />}
+    {reading && <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.55)", zIndex: 80, display: "grid", placeItems: "center", padding: 24 }}><div className="card card-pad" style={{ width: "100%", maxWidth: 560, minHeight: 220 }}>
+      <div className="row"><span className="spinner" /><div><div className="eyebrow">Lecture du document</div><div className="h3" style={{ marginTop: 4 }}>{reading.name}</div></div><div className="spacer" /><span className="mono faint" style={{ fontSize: 12 }}>{reading.count} phrases</span></div>
+      <div style={{ width: 56, height: 4, background: "var(--bp-red)", margin: "14px 0" }} />
+      <div key={reading.i} className="quote" style={{ fontSize: 17, lineHeight: 1.45, minHeight: 80, animation: "fade .35s var(--ease)", borderLeft: "3px solid var(--bp-red)", paddingLeft: 14, margin: 0 }}>« {reading.quote.text} »</div>
+      {reading.quote.item && <div className="row" style={{ marginTop: 12, fontSize: 13 }}><span className="chk-box ai" style={{ display: "inline-grid" }}><Icon n="check" s={12} w={3} /></span><span><span className="mono faint" style={{ fontSize: 11 }}>{reading.quote.item.code}</span> · {reading.quote.item.label}</span></div>}
+      <div className="bar" style={{ marginTop: 16 }}><b style={{ width: ((reading.i + 1) / reading.total * 100) + "%" }} /></div>
+    </div></div>}
     {sheet === "gaps" && <Modal onClose={() => setSheet(null)}><div className="h2">Domaines non abordés</div><p className="muted" style={{ fontSize: 14 }}>Avant de quitter le site, ces domaines de la grille n'ont été ni abordés à l'oral ni cochés :</p>
       <div className="grid" style={{ gap: 6, marginBottom: 16 }}>{uncovered.map(d => <div key={d} className="row" style={{ fontSize: 15 }}><span style={{ width: 8, height: 8, borderRadius: 4, background: "var(--bp-red)" }} />{d}</div>)}</div>
       <div className="row" style={{ justifyContent: "flex-end" }}><button className="btn" onClick={() => setSheet(null)}>Continuer la visite</button><button className="btn btn-dark" onClick={() => { setSheet(null); onSynth(); }}>Aller à la synthèse</button></div></Modal>}
