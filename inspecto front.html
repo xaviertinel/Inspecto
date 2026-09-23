@@ -1336,6 +1336,15 @@ async function relayInfo() {
 const mobileLink = (r, code) => r ? `${r.page}?code=${code}&api=${encodeURIComponent(r.base)}` : "";
 function useRelay() { const [r, setR] = useState(null); const [tick, setTick] = useState(0); useEffect(() => { relayInfo().then(setR); }, [tick]); return [r, () => setTick(t => t + 1)]; }
 
+function QrPanel({ v }) {
+  const [relay] = useRelay(); const mlink = mobileLink(relay, v.code);
+  return <div className="card card-pad" style={{ marginTop: 8 }}>
+    <div className="eyebrow" style={{ marginBottom: 8 }}>Photos depuis un téléphone</div>
+    <div className="row" style={{ gap: 14, alignItems: "flex-start" }}>{mlink ? <QR text={mlink} size={120} /> : <div className="faint" style={{ fontSize: 12 }}>Relais indisponible</div>}
+      <div style={{ fontSize: 13 }}><div className="mono" style={{ fontSize: 22, letterSpacing: ".18em", fontWeight: 600 }}>{v.code}</div><p className="faint" style={{ margin: "6px 0 0", fontSize: 12 }}>Scannez : la page ouverte permet de prendre des photos, envoyées dans cette visite en quelques secondes. Aucun compte requis.</p></div></div>
+  </div>;
+}
+
 function ShareSheet({ v, onClose }) {
   const st = useStore(); const link = location.href.split("#")[0] + "#/visit?join=" + v.code;
   const [relay, refresh] = useRelay(); const [edit, setEdit] = useState(false); const [url, setUrl] = useState(ls.get("insp.relay", "") || "");
@@ -1627,6 +1636,7 @@ function Capture({ v, save, onBack, onSynth }) {
         ...v.recordings.map(r => ({ k: "r" + r.id, at: r.at, el: <div className="row" style={{ gap: 10 }}><div style={{ width: 56, height: 56, display: "grid", placeItems: "center", background: "var(--surface-3)" }}><Icon n="mic" /></div><div><div style={{ fontSize: 14, fontWeight: 600 }}>{r.name}</div><div className="mono faint" style={{ fontSize: 11 }}>{fmt(r.duration)}</div></div></div> }))]
         .sort((a, b) => b.at - a.at).map(x => <button key={x.k} className="card" style={{ padding: 8, textAlign: "left" }} onClick={() => setSheet("media")}>{x.el}</button>)}
       {!v.photos.length && !v.recordings.length && <div className="empty">Le journal se remplit pendant la visite.</div>}
+      <QrPanel v={v} />
     </div>}
   </div>;
   const uncovered = t.domains.filter(d => !t.items.some(i => i.domain === d && v.checklist[i.id]));
@@ -1652,6 +1662,7 @@ function Capture({ v, save, onBack, onSynth }) {
           <button className={"v-tool" + (gpsOn ? " on" : "")} onClick={() => setGpsOn(!gpsOn)}><Icon n="pin" />GPS{gpsOn ? " actif" : ""}</button>
           <button className="v-tool" onClick={() => setSheet("camera")}><Icon n="cam" />Photo</button>
           <button className="v-tool" onClick={() => docRef.current?.click()}><Icon n="report" />Document</button>
+          <button className="v-tool" title="QR code : photos depuis un téléphone" onClick={() => setSheet("share")}><Icon n="share" />QR photos{v.photos.some(p => p.fromMobile) && <span className="badge">{v.photos.filter(p => p.fromMobile).length}</span>}</button>
           <button className="v-tool" title="Médias" aria-label="Médias" onClick={() => setSheet("media")}><Icon n="img" />{v.photos.length + v.recordings.length > 0 ? <span className="badge">{v.photos.length + v.recordings.length}</span> : <span className="mono" style={{ fontSize: 10 }}>0</span>}</button>
           <button className="v-tool" onClick={() => { setAside("grid"); setAsideMobile(true); }}><Icon n="list" />Grille<span className="mono" style={{ fontSize: 10 }}>{covered}/{t.items.length}</span></button>
         </div>
