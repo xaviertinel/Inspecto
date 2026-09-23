@@ -342,6 +342,36 @@ const AUDIT_TYPES = {
       ["Documentation","R.4226-14","Vérification périodique des installations électriques"],
     ],
   },
+  "securite-42": {
+    label: "Visite sécurité d'un étage de campus",
+    short: "Sécurité étage",
+    refs: ["Code de la construction et de l'habitation (ERP)", "Arrêté du 25 juin 1980", "NF P01-012 garde-corps", "Code du travail R4227"],
+    domains: ["Moyens de secours", "Évacuation", "Éclairage et alarme", "Garde-corps et chutes", "Documentation", "Sûreté et accessibilité"],
+    bench: { "Moyens de secours": 78, "Évacuation": 80, "Éclairage et alarme": 75, "Garde-corps et chutes": 72, "Documentation": 70, "Sûreté et accessibilité": 70 },
+    items: [
+      ["Moyens de secours","R.4227-29","Extincteurs présents, accessibles et signalés"],
+      ["Moyens de secours","NF S61-919","Vérification annuelle des extincteurs à jour"],
+      ["Moyens de secours","R.4227-29","Extincteurs fixés, pression et goupille conformes"],
+      ["Évacuation","CO 45","Issues de secours dégagées et non verrouillées"],
+      ["Évacuation","CO 46","Portes s'ouvrant dans le sens de l'évacuation, barres anti-panique"],
+      ["Évacuation","CO 52","Escaliers et paliers libres de tout stockage"],
+      ["Évacuation","MS 41","Plan d'évacuation affiché et à jour"],
+      ["Éclairage et alarme","EC 7","Blocs autonomes d'éclairage de sécurité fonctionnels"],
+      ["Éclairage et alarme","MS 62","Déclencheurs manuels d'alarme présents et intacts"],
+      ["Éclairage et alarme","CO 42","Signalisation des issues éclairée"],
+      ["Garde-corps et chutes","NF P01-012","Hauteur de garde-corps supérieure ou égale à 1 m"],
+      ["Garde-corps et chutes","NF P01-012","Espacement des barreaux inférieur à 11 cm, lisses présentes"],
+      ["Garde-corps et chutes","NF P01-013","Fixations et état des garde-corps, absence de corrosion"],
+      ["Garde-corps et chutes","R.4214-4","Escaliers extérieurs : main courante et nez de marche"],
+      ["Documentation","R.123-51","Registre de sécurité tenu à jour"],
+      ["Documentation","R.123-45","Dernière visite de la commission de sécurité"],
+      ["Documentation","R.4226-14","Vérification périodique des installations électriques"],
+      ["Sûreté et accessibilité","3.1","Contrôle d'accès du bâtiment ouvert 24h/24"],
+      ["Sûreté et accessibilité","3.2","Sécurité des personnes en horaires tardifs"],
+      ["Sûreté et accessibilité","3.3","Sécurité informatique et des données"],
+      ["Sûreté et accessibilité","3.4","Accessibilité PMR"],
+    ],
+  },
   "visite-42": {
     label: "Visite multicritère de campus (sécurité de l'étage incluse)",
     short: "Campus 42",
@@ -496,14 +526,15 @@ const AUDIT_42 = () => mkAudit({ id: "a42", ref: "INS-2026-0151", site: "École 
 });
 /* Visite en cours de démonstration : R+3 de l'école 42, déjà parcourue en partie (plan, chapitres, transcription, cases IA). */
 const VISIT_42 = () => ({
-  id: "v42demo", code: "ECOLE4", name: "Visite École 42 · sécurité R+3", site: "École 42 Paris", date: today(), place: "96 boulevard Bessières, Paris 17e", gps: null, lang: "fr", type: "visite-42", sector: "Public", team: ["Xavier Tinel"],
+  id: "v42demo", code: "ECOLE4", name: "Visite École 42 · sécurité R+3", site: "École 42 Paris", date: today(), place: "96 boulevard Bessières, Paris 17e", gps: null, lang: "fr", type: "securite-42", sector: "Public", team: ["Xavier Tinel"],
   consent: { at: new Date(Date.now() - 3600e3).toISOString(), participants: "Responsable des services généraux, équipe du Bocal", autoBlur: false }, createdAt: Date.now() - 3600e3,
   recordings: [{ id: "r42", name: "Enregistrement 1", segments: [], duration: 300, offset: 0, at: Date.now() - 3600e3, audio: null }],
   lines: [[0, "Visite de sécurité du niveau R+3, école 42, 96 boulevard Bessières. Accompagné du responsable des services généraux."], [8, "Départ du point « Vous êtes ici » près de l'ascenseur nord-ouest. Le plan d'évacuation est affiché, lisible et orienté, légende complète."], [60, "Cage d'escalier nord : les deux issues de secours sont dégagées, barres anti-panique fonctionnelles, portes dans le sens de l'évacuation."], [90, "Blocs d'éclairage de sécurité allumés dans la cage nord, déclencheur manuel d'alarme présent et intact."], [180, "Espace modulaire : pictogrammes d'évacuation visibles au-dessus de chaque issue, cheminements libres, postes des clusters bien rangés."], [240, "Cage d'escalier sud : issue dégagée, barre anti-panique fonctionnelle, palier libre."], [260, "Terrasse jardin : garde-corps périphérique d'environ 1 mètre 10, lisses complètes, fixations saines, sol propre."], [290, "Il reste à contrôler les extincteurs de l'étage, en particulier celui de la régie, et la sécurité de nuit avec l'équipe du Bocal."]].map(([t, text]) => ({ t, text, lang: "fr", rec: "r42" })),
   sections: [{ t: 0, fr: "Entrée et plan d'évacuation", en: "Entrance and evacuation plan", es: "Entrada y plano de evacuación" }, { t: 60, fr: "Cage d'escalier nord", en: "North staircase", es: "Escalera norte" }, { t: 180, fr: "Espace modulaire", en: "Modular space", es: "Espacio modular" }, { t: 240, fr: "Cage d'escalier sud", en: "South staircase", es: "Escalera sur" }, { t: 260, fr: "Terrasse jardin", en: "Garden terrace", es: "Terraza jardín" }, { t: 290, fr: "Régie : extincteur à vérifier", en: "Control room: extinguisher to check", es: "Sala de control: extintor por verificar" }],
   plan: { src: PLAN_42_SRC, name: "Plan d'évacuation R+3", points: { 0: { x: .52, y: .47 }, 60: { x: .7, y: .37 }, 180: { x: .7, y: .65 }, 240: { x: .7, y: .87 }, 260: { x: .4, y: .62 }, 290: { x: .61, y: .53 } } },
   photos: [], trace: [], translations: {}, analysis: null, auditId: null, pendingAnalysis: false,
-  checklist: { c13: "ai", c14: "ai", c15: "ai", c16: "ai", c11: "manual" },
+  // Tout est vérifié sauf l'extincteur (c1, c2) ; les points de sûreté (c17-c20) seront cochés par l'import du rapport.
+  checklist: { c0: "ai", c3: "ai", c4: "ai", c5: "ai", c6: "ai", c7: "ai", c8: "ai", c9: "ai", c10: "ai", c11: "ai", c12: "ai", c13: "ai", c14: "manual", c15: "manual", c16: "manual" },
 });
 
 const SEED_AUDITS = () => [
@@ -2093,7 +2124,7 @@ function App() {
   useEffect(() => { (async () => {
     const [a, v, p, types] = await Promise.all([storage.get("audits"), storage.get("visits"), storage.get("practices"), storage.get("types")]);
     if (types) Object.assign(AUDIT_TYPES, types);
-    setAudits(a ? (a.some(x => x.id === "a42") ? a.map(x => x.id === "a42" && (!x.plan || String(x.plan.src).startsWith("/demo/")) ? { ...AUDIT_42(), findings: x.findings, status: x.status } : x) : [AUDIT_42(), ...a]) : SEED_AUDITS()); setVisits(v ? (v.some(x => x.id === "v42demo") || ls.get("insp.v42.removed", false) ? v : [VISIT_42(), ...v]) : [VISIT_42()]); if (p) setPractices(p);
+    setAudits(a ? (a.some(x => x.id === "a42") ? a.map(x => x.id === "a42" && (!x.plan || String(x.plan.src).startsWith("/demo/")) ? { ...AUDIT_42(), findings: x.findings, status: x.status } : x) : [AUDIT_42(), ...a]) : SEED_AUDITS()); setVisits(v ? (ls.get("insp.v42.removed", false) ? v : v.some(x => x.id === "v42demo") ? v.map(x => x.id === "v42demo" && x.type !== "securite-42" ? VISIT_42() : x) : [VISIT_42(), ...v]) : [VISIT_42()]); if (p) setPractices(p);
   })(); }, []);
   useEffect(() => { if (audits) storage.set("audits", audits); }, [audits]);
   useEffect(() => { storage.set("visits", visits); }, [visits]);
